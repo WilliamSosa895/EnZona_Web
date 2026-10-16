@@ -1,0 +1,155 @@
+.boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--esp-s);
+  width: 100%;
+  min-height: var(--boton-principal);
+  padding: 0 var(--esp-xl);
+  border: 0;
+  border-radius: 999px;
+  font: var(--title-small);
+  cursor: pointer;
+  text-decoration: none;
+  transition:
+    background-color 0.15s,
+    box-shadow 0.15s;
+}
+
+.normal {
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
+.normal:hover:not(:disabled) {
+  background: var(--azul-marino-presionado);
+}
+
+.destacado {
+  background: var(--tertiary);
+  color: var(--on-tertiary);
+}
+
+.destacado:hover:not(:disabled) {
+  background: var(--coral-oscuro);
+}
+
+.peligro {
+  background: var(--error);
+  color: #fff;
+}
+
+.boton:disabled {
+  background: var(--surface-container-highest);
+  color: var(--on-surface-variant);
+  cursor: not-allowed;
+}
+
+.secundario {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--esp-s);
+  width: 100%;
+  min-height: var(--control);
+  padding: 0 var(--esp-xl);
+  border: 1px solid var(--outline);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--on-surface);
+  font: var(--title-small);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.secundario svg {
+  color: var(--primary);
+}
+
+.secundario:hover:not(:disabled) {
+  background: var(--secondary-container);
+}
+
+.secundario:disabled {
+  color: var(--gris-suave);
+  border-color: var(--linea);
+  cursor: not-allowed;
+}
+
+.texto {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-xs);
+  min-height: 40px;
+  padding: 0 var(--esp-m);
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--secondary);
+  font: var(--label-large);
+  cursor: pointer;
+}
+
+.texto:hover:not(:disabled) {
+  background: var(--secondary-container);
+}
+
+.texto:disabled {
+  color: var(--gris-suave);
+  cursor: not-allowed;
+}
+
+.textoNeutro {
+  color: var(--on-surface-variant);
+}
+
+.textoPeligro {
+  color: var(--error);
+}
+
+.icono {
+  display: inline-grid;
+  place-items: center;
+  width: var(--control);
+  height: var(--control);
+  flex: none;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--on-surface);
+  cursor: pointer;
+}
+
+.icono:hover:not(:disabled) {
+  background: var(--superficie-alta);
+}
+
+.iconoTonal {
+  background: var(--secondary-container);
+  color: var(--on-primary-container);
+}
+
+.iconoTonal:hover:not(:disabled) {
+  background: var(--primary-container);
+}
+
+.icono:disabled {
+  color: var(--gris-suave);
+  background: transparent;
+  cursor: not-allowed;
+}
+
+.girando {
+  width: 20px;
+  height: 20px;
+  border: 2.5px solid currentcolor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: girar 0.8s linear infinite;
+}
+
+@keyframes girar {
+  to {
+    transform: rotate(360deg);
+  }
+}

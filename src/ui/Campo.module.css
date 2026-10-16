@@ -1,0 +1,143 @@
+.contenedor {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.caja {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 56px;
+  border: 1px solid var(--outline);
+  border-radius: var(--radio-m);
+  background: var(--superficie);
+  transition: border-color 0.15s;
+}
+
+.caja:hover {
+  border-color: var(--on-surface-variant);
+}
+
+.caja:focus-within {
+  border: 2px solid var(--primary);
+}
+
+.conError,
+.conError:focus-within,
+.conError:hover {
+  border: 2px solid var(--error);
+}
+
+.deshabilitada {
+  background: var(--superficie-baja);
+  border-color: var(--linea);
+}
+
+.icono {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  padding-left: 4px;
+  color: var(--on-surface-variant);
+  font-size: 22px;
+}
+
+.caja:focus-within .icono {
+  color: var(--primary);
+}
+
+.entrada {
+  flex: 1;
+  min-width: 0;
+  padding: 22px 14px 8px;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--on-surface);
+  font: var(--body-large);
+  resize: vertical;
+}
+
+.entrada:disabled {
+  color: var(--on-surface-variant);
+}
+
+textarea.entrada {
+  min-height: 96px;
+  padding-top: 26px;
+}
+
+.etiqueta {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  max-width: calc(100% - 28px);
+  overflow: hidden;
+  color: var(--on-surface-variant);
+  font: var(--body-large);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  pointer-events: none;
+  transition:
+    top 0.15s,
+    font-size 0.15s,
+    color 0.15s;
+}
+
+.conIcono .etiqueta {
+  left: 48px;
+}
+
+.caja.multilinea .etiqueta {
+  top: 26px;
+}
+
+/* Etiqueta flotante: sube cuando el campo tiene foco o contenido. */
+.entrada:focus + .etiqueta,
+.entrada:not(:placeholder-shown) + .etiqueta {
+  top: 14px;
+  font: var(--label-medium);
+}
+
+.caja.multilinea .entrada:focus + .etiqueta,
+.caja.multilinea .entrada:not(:placeholder-shown) + .etiqueta {
+  top: 12px;
+}
+
+.entrada:focus + .etiqueta {
+  color: var(--primary);
+}
+
+.conError .etiqueta {
+  color: var(--error) !important;
+}
+
+.ojo {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-right: 4px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--on-surface-variant);
+  font-size: 22px;
+  cursor: pointer;
+}
+
+.ojo:hover {
+  background: var(--superficie-alta);
+}
+
+.pie {
+  margin: var(--esp-xs) 0 0 var(--esp-xs);
+  color: var(--on-surface-variant);
+  font: var(--body-small);
+}
+
+.pieError {
+  color: var(--error);
+}

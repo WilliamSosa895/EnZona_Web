@@ -1,0 +1,262 @@
+/* Selector de cantidad */
+.cantidad {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-xs);
+}
+
+.cantidadTexto {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
+.cantidadTitulo {
+  color: var(--on-surface);
+  font: var(--title-small);
+}
+
+.cantidadDetalle {
+  color: var(--on-surface-variant);
+  font: var(--body-small);
+}
+
+.cantidadValor {
+  min-width: 44px;
+  color: var(--on-surface);
+  font: var(--headline-small);
+  text-align: center;
+}
+
+/* Barra de acción inferior: fija en móvil, panel lateral en escritorio */
+.barraAccion {
+  position: fixed;
+  right: 0;
+  bottom: var(--alto-navegacion, 0px);
+  left: var(--ancho-riel, 0px);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-s);
+  padding: var(--esp-m) var(--margen) max(var(--esp-m), env(safe-area-inset-bottom));
+  background: var(--superficie);
+  box-shadow: var(--sombra-barra);
+}
+
+.barraAccionInterior {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-s);
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.resumen {
+  color: var(--on-surface);
+  font: var(--title-small);
+}
+
+/* Espacio para que la barra fija no tape el final del contenido */
+.relleno {
+  height: 180px;
+}
+
+/* Ajustes */
+.tituloSeccion {
+  padding: 22px var(--esp-xs) var(--esp-s);
+  color: var(--on-surface);
+  font: var(--title-medium);
+}
+
+.grupo {
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radio-l);
+  background: var(--superficie);
+  overflow: hidden;
+}
+
+.fila {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: var(--control);
+  padding: 13px 14px;
+  border: 0;
+  background: transparent;
+  color: var(--on-surface);
+  font: var(--body-large);
+  text-align: left;
+  text-decoration: none;
+}
+
+a.fila,
+button.fila {
+  cursor: pointer;
+}
+
+a.fila:hover,
+button.fila:hover {
+  background: var(--superficie-baja);
+}
+
+.fila > svg:first-child {
+  flex: none;
+  font-size: 22px;
+}
+
+.filaTexto {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.filaDescripcion {
+  color: var(--on-surface-variant);
+  font: var(--body-small);
+}
+
+.filaValor {
+  color: var(--primary);
+  font: var(--body-medium);
+  text-align: right;
+}
+
+.flecha {
+  flex: none;
+  color: var(--on-surface-variant);
+  font-size: 24px;
+}
+
+.separador {
+  height: 1px;
+  margin: 0 0 0 50px;
+  border: 0;
+  background: var(--outline-variant);
+}
+
+/* Chips de filtro */
+.chip {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--outline);
+  border-radius: var(--radio-s);
+  background: var(--superficie);
+  color: var(--on-surface);
+  font: var(--label-large);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.chip svg {
+  font-size: 18px;
+}
+
+.chipActivo {
+  border-color: var(--primary);
+  background: var(--primary-container);
+  color: var(--on-primary-container);
+}
+
+.menuContenedor {
+  position: relative;
+  flex: none;
+}
+
+.menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 20;
+  min-width: 200px;
+  max-height: 320px;
+  margin: 0;
+  padding: var(--esp-s) 0;
+  overflow-y: auto;
+  border-radius: var(--radio-xs);
+  background: var(--superficie);
+  box-shadow: var(--sombra-dialogo);
+  list-style: none;
+}
+
+.menuOpcion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-m);
+  width: 100%;
+  min-height: var(--control);
+  padding: 0 var(--esp-l);
+  border: 0;
+  background: transparent;
+  color: var(--on-surface);
+  font: var(--body-large);
+  text-align: left;
+  cursor: pointer;
+}
+
+.menuOpcion:hover,
+.menuOpcion:focus-visible {
+  background: var(--superficie-alta);
+  outline: none;
+}
+
+.menuOpcion svg {
+  color: var(--primary);
+}
+
+/* Logo y avatar */
+.logo {
+  width: auto;
+  height: 40px;
+}
+
+.avatar {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--azul-degradado-inicio), var(--azul-enzona));
+  color: #fff;
+  font: 700 24px/1 var(--fuente);
+}
+
+/* Contenedor de página */
+.pagina {
+  width: 100%;
+  max-width: var(--ancho-contenido);
+  margin: 0 auto;
+  padding: 0 var(--margen) var(--esp-xl);
+}
+
+.angosta {
+  max-width: 720px;
+}
+
+.encabezado {
+  padding: var(--esp-m) 0 var(--esp-s);
+}
+
+.tituloPagina {
+  color: var(--tinta);
+  font: var(--headline-medium);
+}
+
+.subtituloPagina {
+  color: var(--on-surface-variant);
+  font: var(--body-large);
+}
+
+.pila {
+  display: flex;
+  flex-direction: column;
+}
