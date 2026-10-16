@@ -1,0 +1,19 @@
+# Dependencias y compilados
+node_modules/
+dist/
+coverage/
+playwright-report/
+test-results/
+*.tsbuildinfo
+
+# Variables de entorno: nunca se suben (usa .env.example)
+.env
+.env.*
+!.env.example
+
+# Editores y sistema
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+*.log
