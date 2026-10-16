@@ -38,15 +38,24 @@ interface PortadaProps {
   mostrarFecha?: boolean;
   /** Esquinas redondeadas solo arriba (dentro de una tarjeta). */
   soloArriba?: boolean;
+  /** En pantallas anchas usa una proporción más baja (cabecera del detalle). */
+  ancha?: boolean;
 }
 
 /** Portada 16:9 con el sustituto por categoría. */
-export function Portada({ nombre, categoria, fecha, mostrarFecha = true, soloArriba = false }: PortadaProps) {
+export function Portada({
+  nombre,
+  categoria,
+  fecha,
+  mostrarFecha = true,
+  soloArriba = false,
+  ancha = false,
+}: PortadaProps) {
   const tono = tonoDe(categoria);
   const Icono = tono.icono;
   return (
     <div
-      className={[estilos.portada, soloArriba ? estilos.soloArriba : ''].join(' ')}
+      className={[estilos.portada, soloArriba ? estilos.soloArriba : '', ancha ? estilos.ancha : ''].join(' ')}
       style={{ background: tono.fondo }}
       role="img"
       aria-label={`Portada de ${nombre}${categoria ? `, categoría ${categoria}` : ''}`}

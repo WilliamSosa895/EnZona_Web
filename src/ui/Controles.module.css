@@ -214,8 +214,11 @@ button.fila:hover {
 
 /* Logo y avatar */
 .logo {
+  align-self: flex-start;
   width: auto;
+  max-width: 100%;
   height: 40px;
+  object-fit: contain;
 }
 
 .avatar {
@@ -259,4 +262,18 @@ button.fila:hover {
 .pila {
   display: flex;
   flex-direction: column;
+}
+
+/* En escritorio la barra de acción deja de ser fija: queda en línea (por ejemplo, en la columna de compra). */
+@media (min-width: 1024px) {
+  .barraAccion {
+    position: static;
+    padding: var(--esp-l);
+    border-radius: var(--radio-l);
+    box-shadow: var(--sombra-tarjeta);
+  }
+
+  .relleno {
+    display: none;
+  }
 }
