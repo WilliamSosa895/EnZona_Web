@@ -8,6 +8,8 @@ import { RequiereSesion, SoloSinSesion } from './Guardas';
 const Acceso = lazy(() => import('@/features/acceso/AccesoPage'));
 const Registro = lazy(() => import('@/features/acceso/RegistroPage'));
 const Verificacion = lazy(() => import('@/features/acceso/VerificacionPage'));
+const Inicio = lazy(() => import('@/features/eventos/InicioPage'));
+const DetalleEvento = lazy(() => import('@/features/eventos/DetalleEventoPage'));
 const Ayuda = lazy(() => import('@/features/informacion/AyudaPage'));
 const Privacidad = lazy(() => import('@/features/informacion/PrivacidadPage'));
 const Legal = lazy(() => import('@/features/informacion/LegalPage'));
@@ -52,6 +54,8 @@ export const rutas: RouteObject[] = [
       </RequiereSesion>
     ),
     children: [
+      { path: '/', element: <Inicio /> },
+      { path: '/eventos/:id', element: <DetalleEvento /> },
       { path: '/ayuda', element: <Ayuda /> },
       { path: '/privacidad', element: <Privacidad /> },
       { path: '/legal', element: <Legal /> },
