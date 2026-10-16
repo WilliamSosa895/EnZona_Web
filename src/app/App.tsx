@@ -11,7 +11,7 @@ export function App() {
   return (
     <QueryClientProvider client={clienteConsultas}>
       <SesionProvider>
-        <RouterProvider router={enrutador} />
+        <RouterProvider router={enrutador} future={{ v7_startTransition: true }} />
       </SesionProvider>
     </QueryClientProvider>
   );
