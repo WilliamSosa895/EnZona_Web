@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop, 'feature/**', 'release/**', 'hotfix/**']
+  pull_request:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+
+jobs:
+  calidad:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Auditoría de dependencias (vulnerabilidades altas o críticas)
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Formato
+        run: npm run format:check
+
+      - name: Análisis estático
+        run: npm run lint
+
+      - name: Tipos
+        run: npm run typecheck
+
+      # Pruebas unitarias y de integración contra la API simulada, con reporte de cobertura.
+      - name: Pruebas
+        run: npm run test:coverage
+
+      - name: Publicar reporte de cobertura
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cobertura
+          path: coverage
+
+      - name: Compilar
+        run: npm run build
+        env:
+          VITE_API_URL: https://api.enzona.mx

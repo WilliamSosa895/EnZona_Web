@@ -1,0 +1,117 @@
+.marco {
+  min-height: 100dvh;
+}
+
+.contenido {
+  min-height: 100dvh;
+  padding-bottom: calc(var(--alto-navegacion, 0px) + env(safe-area-inset-bottom));
+}
+
+/* Barra de navegación inferior (móvil y tableta vertical), como la NavigationBar de Android */
+.barra {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 20;
+  display: flex;
+  justify-content: space-around;
+  height: calc(80px + env(safe-area-inset-bottom));
+  padding: 0 var(--esp-s) env(safe-area-inset-bottom);
+  background: var(--superficie);
+  box-shadow: var(--sombra-barra);
+}
+
+.destino {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  max-width: 120px;
+  color: var(--on-surface-variant);
+  font: var(--label-medium);
+  text-decoration: none;
+}
+
+.indicador {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 32px;
+  border-radius: 999px;
+  font-size: 24px;
+  transition: background-color 0.15s;
+}
+
+.activo {
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.activo .indicador {
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
+.destino:hover .indicador {
+  background: var(--superficie-alta);
+}
+
+.activo:hover .indicador {
+  background: var(--azul-marino-presionado);
+}
+
+.logoRiel {
+  display: none;
+}
+
+/* Escritorio: riel de navegación lateral (NavigationRail) */
+@media (min-width: 840px) {
+  .marco.conNavegacion {
+    --ancho-riel: 96px;
+  }
+
+  .conNavegacion .contenido {
+    margin-left: var(--ancho-riel);
+    padding-bottom: 0;
+  }
+
+  .barra {
+    top: 0;
+    right: auto;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: var(--esp-m);
+    width: var(--ancho-riel);
+    height: 100dvh;
+    padding: var(--esp-l) 0;
+    box-shadow: 1px 0 0 var(--linea);
+  }
+
+  .destino {
+    flex: none;
+    width: 100%;
+    max-width: none;
+    padding: var(--esp-xs) 0;
+  }
+
+  .logoRiel {
+    display: grid;
+    place-items: center;
+    width: 56px;
+    height: 56px;
+    margin: 0 auto var(--esp-l);
+  }
+}
+
+@media (max-width: 839.98px) {
+  .marco.conNavegacion.conBarra {
+    --alto-navegacion: 80px;
+  }
+
+  .marco:not(.conBarra) .barra {
+    display: none;
+  }
+}
