@@ -1,0 +1,49 @@
+.contenido {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-m);
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 0 18px var(--esp-xxl);
+}
+
+.apartado {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: var(--esp-l);
+  border-radius: var(--radio-l);
+  background: var(--superficie);
+}
+
+.apartado h2 {
+  color: var(--tinta);
+  font: var(--title-medium);
+}
+
+.apartado p {
+  color: var(--gris-texto);
+  font: var(--body-medium);
+}
+
+.subtitulo {
+  margin-top: var(--esp-s);
+  color: var(--tinta);
+  font: var(--title-medium);
+}
+
+.contacto {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-m);
+}
+
+.contacto svg {
+  color: var(--coral);
+  font-size: 20px;
+}
+
+.contacto strong {
+  color: var(--tinta);
+}
