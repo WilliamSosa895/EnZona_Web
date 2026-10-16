@@ -21,6 +21,22 @@ export function reiniciarBase(): BaseSimulada {
 
 export const base = () => db;
 
+/** Serializa la base (modo demostración) para que sobreviva a una recarga de la pestaña. */
+export function exportarBase(): string {
+  return JSON.stringify({ ...db, sesiones: [...db.sesiones] });
+}
+
+/** Restaura una base exportada; si el contenido no es válido conserva la base inicial. */
+export function importarBase(texto: string | null): void {
+  if (!texto) return;
+  try {
+    const datos = JSON.parse(texto) as Omit<BaseSimulada, 'sesiones'> & { sesiones: [string, number][] };
+    db = { ...datos, sesiones: new Map(datos.sesiones) };
+  } catch {
+    db = crearBase();
+  }
+}
+
 const api = (ruta: string) => `${env.apiUrl}/api${ruta}`;
 const ahoraIso = () => new Date().toISOString();
 
