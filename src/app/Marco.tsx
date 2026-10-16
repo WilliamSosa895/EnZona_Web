@@ -2,6 +2,7 @@ import { Suspense } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useSesion } from '@/auth/useSesion';
 import { IndicadorCarga } from '@/ui';
+import pin from '@/assets/enzona_pin.png';
 import { destinosDeRol } from './navegacion';
 import estilos from './Marco.module.css';
 
@@ -21,7 +22,7 @@ export function Marco() {
         Saltar al contenido
       </a>
       <nav className={estilos.barra} aria-label="Navegación principal">
-        <img src="/favicon.png" alt="" className={estilos.logoRiel} width={56} height={56} />
+        <img src={pin} alt="" className={estilos.logoRiel} width={56} height={56} />
         {destinos.map(({ ruta, etiqueta, icono: Icono }) => (
           <NavLink
             key={ruta}

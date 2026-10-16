@@ -6,6 +6,12 @@
   border-radius: var(--radio-l);
 }
 
+@media (min-width: 840px) {
+  .ancha {
+    aspect-ratio: 21 / 8;
+  }
+}
+
 .soloArriba {
   border-radius: var(--radio-l) var(--radio-l) 0 0;
 }
