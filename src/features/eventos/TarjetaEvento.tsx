@@ -12,7 +12,7 @@ export function TarjetaEvento({ evento }: { evento: Evento }) {
     <Tarjeta sinRelleno a={`/eventos/${evento.id}`} className={estilos.tarjeta}>
       <Portada nombre={evento.nombre} categoria={evento.categoria} fecha={evento.fechaHoraInicio} soloArriba />
       <div className={estilos.tarjetaCuerpo}>
-        <h3 className={estilos.tarjetaNombre}>{evento.nombre}</h3>
+        <h2 className={estilos.tarjetaNombre}>{evento.nombre}</h2>
         <span className={estilos.compacta}>
           <MdCalendarMonth aria-hidden="true" />
           <span>{corto(evento.fechaHoraInicio)}</span>

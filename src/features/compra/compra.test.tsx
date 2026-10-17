@@ -33,6 +33,28 @@ describe('compra con asientos y pago (RF-09, RF-11, CP-09, CP-10)', () => {
     expect(await screen.findByText('$360.00 MXN', { selector: 'span' })).toBeInTheDocument();
   });
 
+  it('elige un asiento por sección, fila y número y ajusta el zoom', async () => {
+    sesionComo('asistente@uv.mx');
+    const { usuario } = renderizarApp('/eventos/1/asientos?tipo=16&cantidad=1');
+    await usuario.click(await screen.findByRole('button', { name: 'Elegir por número' }));
+    const dialogo = screen.getByRole('dialog', { name: 'Elegir por número' });
+    await usuario.selectOptions(within(dialogo).getByLabelText('Fila'), 'C');
+    await usuario.selectOptions(within(dialogo).getByLabelText('Asiento'), '4');
+    await usuario.click(within(dialogo).getByRole('button', { name: 'Añadir asiento' }));
+    expect(screen.getByRole('checkbox', { name: /fila C, asiento 4, seleccionado/ })).toBeChecked();
+    expect(screen.getByRole('button', { name: 'Elegir por número' })).toBeDisabled();
+
+    await usuario.click(screen.getByRole('button', { name: 'Ampliar el plano' }));
+    await usuario.click(screen.getByRole('button', { name: 'Ampliar el plano' }));
+    await usuario.click(screen.getByRole('button', { name: 'Ampliar el plano' }));
+    expect(screen.getByRole('button', { name: 'Ampliar el plano' })).toBeDisabled();
+    await usuario.click(screen.getByRole('button', { name: 'Restablecer la vista' }));
+    expect(screen.getByRole('button', { name: 'Ampliar el plano' })).toBeEnabled();
+
+    await usuario.click(screen.getByRole('button', { name: 'Quitar Platea, fila C, asiento 4' }));
+    expect(screen.getByText('Seleccionados 0 de 1')).toBeInTheDocument();
+  });
+
   it('CP-10: pago rechazado sin cargo; el reintento aprobado emite los boletos y ocupa los asientos', async () => {
     sesionComo('asistente@uv.mx');
     const { usuario, enrutador } = renderizarApp('/pago?evento=1&tipo=15&cantidad=2&asientos=1011,1012');
@@ -61,6 +83,21 @@ describe('compra con asientos y pago (RF-09, RF-11, CP-09, CP-10)', () => {
     await usuario.click(screen.getByRole('button', { name: 'Pagar $150.00 MXN' }));
     expect(await screen.findByText('Estamos confirmando tu pago')).toBeInTheDocument();
     expect(base().eventos.find((e) => e.id === 4)!.tipos[0].disponibles).toBe(5);
+  });
+
+  it('una orden rechazada muestra que no hubo cargo y ofrece volver al evento', async () => {
+    sesionComo('asistente@uv.mx');
+    const { usuario, enrutador } = renderizarApp('/pago?evento=4&tipo=40&cantidad=1');
+    await screen.findByText('Tu orden');
+    await usuario.selectOptions(screen.getByLabelText('Resultado de la pasarela'), 'tok_rechazado');
+    await usuario.click(screen.getByRole('button', { name: 'Pagar $150.00 MXN' }));
+    await screen.findByText('Pago rechazado');
+    const orden = base().ordenes[0];
+    await enrutador.navigate(`/ordenes/${orden.ordenId}`);
+    expect(await screen.findByRole('heading', { name: 'No se completó la compra' })).toBeInTheDocument();
+    expect(screen.getByText(/No se realizó ningún cargo/)).toBeInTheDocument();
+    await usuario.click(screen.getByRole('button', { name: 'Volver al evento' }));
+    expect(enrutador.state.location.pathname).toBe('/eventos/4');
   });
 
   it('bloquea el pago si un asiento elegido ya se ocupó', async () => {

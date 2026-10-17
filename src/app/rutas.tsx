@@ -1,6 +1,7 @@
 /* eslint-disable react-refresh/only-export-components -- archivo de configuración de rutas */
 import { lazy } from 'react';
 import { createBrowserRouter, type RouteObject } from 'react-router-dom';
+import { ErrorRuta } from '@/features/comun/ErrorRuta';
 import { Marco, MarcoAcceso } from './Marco';
 import { RequiereRol, RequiereSesion, SoloSinSesion } from './Guardas';
 
@@ -31,6 +32,7 @@ const NoEncontrado = lazy(() => import('@/features/comun/NoEncontradoPage'));
 export const rutas: RouteObject[] = [
   {
     element: <MarcoAcceso />,
+    errorElement: <ErrorRuta />,
     children: [
       {
         path: '/acceso',
@@ -66,6 +68,7 @@ export const rutas: RouteObject[] = [
         <Marco />
       </RequiereSesion>
     ),
+    errorElement: <ErrorRuta />,
     children: [
       { path: '/', element: <Inicio /> },
       { path: '/eventos/:id', element: <DetalleEvento /> },
@@ -133,13 +136,4 @@ export const rutas: RouteObject[] = [
   },
 ];
 
-/** Comportamientos de React Router v7 activados desde ahora para facilitar la migración. */
-export const FUTURO = {
-  v7_relativeSplatPath: true,
-  v7_fetcherPersist: true,
-  v7_normalizeFormMethod: true,
-  v7_partialHydration: true,
-  v7_skipActionErrorRevalidation: true,
-} as const;
-
-export const crearEnrutador = () => createBrowserRouter(rutas, { future: FUTURO });
+export const crearEnrutador = () => createBrowserRouter(rutas);

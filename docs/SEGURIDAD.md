@@ -46,7 +46,7 @@ Se definen en `deploy/nginx.conf.template` (Docker) y `deploy/_headers` (Cloudfl
 ## Dependencias y secretos
 
 - Versiones fijas en `package.json` y `package-lock.json`; `npm ci` en la CI y en Docker.
-- La CI ejecuta `npm audit --omit=dev --audit-level=high`.
+- La CI ejecuta `npm audit --omit=dev --audit-level=high`. Al publicar la versión 0.1.0, `npm audit` no reporta vulnerabilidades (producción y desarrollo).
 - Solo las variables con prefijo `VITE_` llegan al navegador y ninguna es secreta. Los archivos `.env*` están en `.gitignore`, salvo `.env.example` y `.env.demo`, que no contienen secretos.
 - La imagen de Docker usa `nginx-unprivileged` (sin root) y no incluye el código fuente ni `node_modules`.
 

@@ -23,7 +23,7 @@ export function BarraSuperior({ titulo, volver, volverHabilitado = true, accione
           <MdArrowBack size={24} />
         </BotonIcono>
       )}
-      <h1 className={estilos.barraTitulo}>{titulo}</h1>
+      {titulo ? <h1 className={estilos.barraTitulo}>{titulo}</h1> : <span className={estilos.barraTitulo} />}
       {acciones && <div className={estilos.barraAcciones}>{acciones}</div>}
     </header>
   );

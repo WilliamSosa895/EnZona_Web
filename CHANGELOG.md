@@ -18,7 +18,8 @@ Primera versión de la aplicación web, conectada a la API de EnZona 0.1.0 y con
 - **Validador:** escáner de QR con la cámara o captura manual, motivo de rechazo y bitácora reciente (RF-15).
 - **Administración:** búsqueda, bloqueo y desbloqueo de usuarios y cancelación administrativa de eventos (RF-18).
 - Modo demostración con API simulada (`npm run dev:demo`).
-- Pruebas unitarias, de integración y de extremo a extremo; CI con formato, análisis estático, tipos, cobertura mínima, auditoría y compilación.
+- Pruebas unitarias, de integración, de extremo a extremo y de accesibilidad (axe, WCAG 2.1 AA); CI con formato, análisis estático, tipos, cobertura mínima, auditoría y compilación.
+- Pantalla de error por ruta que recarga sola si falta un fragmento tras publicar una versión nueva.
 - Imagen Docker con nginx sin privilegios y cabeceras de seguridad; configuración para Cloudflare Pages.
 - Documentación de arquitectura, seguridad, pruebas, despliegue, estilo y coherencia con Android.
 

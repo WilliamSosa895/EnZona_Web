@@ -197,7 +197,7 @@ function Pago({ evento, asientos, pedido }: { evento: Evento; asientos: Asiento[
           <>
             <Tarjeta>
               <p className={estilos.etiquetaTarjeta}>Tu orden</p>
-              <h1 className={estilos.tituloOrden}>{evento.nombre}</h1>
+              <h2 className={estilos.tituloOrden}>{evento.nombre}</h2>
               <div className={estilos.datos}>
                 <FilaDato icono={<MdCalendarMonth />} etiqueta="Fecha" valor={corto(evento.fechaHoraInicio)} />
                 <FilaDato icono={<MdLocationOn />} etiqueta="Lugar" valor={evento.lugar} />

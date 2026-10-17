@@ -28,7 +28,7 @@
 
 .pestanaActiva {
   border-bottom-color: var(--coral);
-  color: var(--coral-oscuro);
+  color: var(--coral-texto);
 }
 
 .panel {

@@ -100,9 +100,9 @@ function Confirmada({ orden }: { orden: Orden }) {
       <div className={estilos.paginaOrden}>
         <div className={estilos.encabezadoOrden}>
           <MdCheckCircle className={estilos.iconoExito} aria-hidden="true" />
-          <h1 className={estilos.tituloResultado}>
+          <h2 className={estilos.tituloResultado}>
             {n === 1 ? 'Tu boleto está listo' : `Tus ${n} boletos están listos`}
-          </h1>
+          </h2>
         </div>
         {primero && (
           <Tarjeta>
@@ -169,7 +169,7 @@ function Pendiente({
       <div className={estilos.paginaOrden}>
         <div className={estilos.encabezadoOrden}>
           <MdHourglassTop className={estilos.iconoAviso} aria-hidden="true" />
-          <h1 className={estilos.tituloResultado}>Estamos confirmando tu pago</h1>
+          <h2 className={estilos.tituloResultado}>Estamos confirmando tu pago</h2>
         </div>
         <Aviso
           tono="aviso"
@@ -206,7 +206,7 @@ function NoCompletada({ orden }: { orden: Orden }) {
       <div className={estilos.paginaOrden}>
         <div className={estilos.encabezadoOrden}>
           <MdErrorOutline className={estilos.iconoError} aria-hidden="true" />
-          <h1 className={estilos.tituloResultado}>{reembolsada ? 'Orden reembolsada' : 'No se completó la compra'}</h1>
+          <h2 className={estilos.tituloResultado}>{reembolsada ? 'Orden reembolsada' : 'No se completó la compra'}</h2>
         </div>
         {evento.data && <p className={estilos.apoyo}>{evento.data.nombre}</p>}
         <Aviso
