@@ -79,10 +79,24 @@ export function BarraAccion({
   destacado = true,
   aviso,
 }: BarraAccionProps) {
+  const barra = useRef<HTMLDivElement>(null);
+  const [alto, setAlto] = useState<number | null>(null);
+
+  // El espacio reservado sigue el alto real de la barra (crece con un aviso) para no tapar el contenido.
+  useEffect(() => {
+    const elemento = barra.current;
+    if (!elemento || typeof ResizeObserver === 'undefined') return;
+    const observador = new ResizeObserver(([entrada]) =>
+      setAlto(Math.ceil(entrada.borderBoxSize?.[0]?.blockSize ?? 0)),
+    );
+    observador.observe(elemento);
+    return () => observador.disconnect();
+  }, []);
+
   return (
     <>
-      <div className={estilos.relleno} aria-hidden="true" />
-      <div className={estilos.barraAccion}>
+      <div className={estilos.relleno} style={alto ? { height: alto + 16 } : undefined} aria-hidden="true" />
+      <div ref={barra} className={estilos.barraAccion}>
         <div className={estilos.barraAccionInterior}>
           {aviso}
           {resumen && (
@@ -307,6 +321,24 @@ export function Pila({ children, separacion = 16 }: { children: ReactNode; separ
   return (
     <div className={estilos.pila} style={{ gap: separacion }}>
       {children}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------- disposición
+
+interface DosColumnasProps {
+  principal: ReactNode;
+  /** Columna lateral fija en escritorio (resumen y acción principal); debajo del contenido en móvil. */
+  lateral: ReactNode;
+}
+
+/** Contenido principal con columna lateral pegajosa a partir de 1024 px (detalle, plano y pago). */
+export function DosColumnas({ principal, lateral }: DosColumnasProps) {
+  return (
+    <div className={estilos.dosColumnas}>
+      <div className={estilos.columnaPrincipal}>{principal}</div>
+      <aside className={estilos.columnaLateral}>{lateral}</aside>
     </div>
   );
 }

@@ -277,3 +277,35 @@ button.fila:hover {
     display: none;
   }
 }
+
+/* Disposición en dos columnas */
+.dosColumnas {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--esp-l);
+  width: 100%;
+  max-width: var(--ancho-contenido);
+  margin: 0 auto;
+  padding: 0 var(--margen);
+}
+
+.columnaPrincipal,
+.columnaLateral {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-l);
+  min-width: 0;
+}
+
+@media (min-width: 1024px) {
+  .dosColumnas {
+    grid-template-columns: minmax(0, 1fr) 380px;
+    align-items: start;
+    gap: var(--esp-xl);
+  }
+
+  .columnaLateral {
+    position: sticky;
+    top: 72px;
+  }
+}

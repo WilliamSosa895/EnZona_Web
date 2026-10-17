@@ -10,6 +10,11 @@
   background: var(--fondo);
 }
 
+/* Sin botón de volver el título se alinea con el margen del contenido */
+.barra > .barraTitulo:first-child {
+  padding-left: calc(var(--margen) - var(--esp-xs));
+}
+
 .barraTitulo {
   flex: 1;
   min-width: 0;
