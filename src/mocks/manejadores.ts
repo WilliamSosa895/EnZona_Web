@@ -692,7 +692,7 @@ function politica(e: EventoSimulado, administrativa: boolean): PoliticaCancelaci
       comision: '0.00',
       reembolso: '0.00',
       boletosAfectados: 0,
-      motivoBloqueo: 'El evento ya inició; solo puede marcarse como finalizado',
+      motivoBloqueo: 'El evento ya inició; ya no puede cancelarse',
     };
   const tipo = administrativa
     ? 'ADMINISTRATIVA'
