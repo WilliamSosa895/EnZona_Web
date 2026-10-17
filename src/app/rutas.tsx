@@ -10,6 +10,11 @@ const Registro = lazy(() => import('@/features/acceso/RegistroPage'));
 const Verificacion = lazy(() => import('@/features/acceso/VerificacionPage'));
 const Inicio = lazy(() => import('@/features/eventos/InicioPage'));
 const DetalleEvento = lazy(() => import('@/features/eventos/DetalleEventoPage'));
+const Asientos = lazy(() => import('@/features/compra/AsientosPage'));
+const Pago = lazy(() => import('@/features/compra/PagoPage'));
+const Orden = lazy(() => import('@/features/compra/OrdenPage'));
+const MisBoletos = lazy(() => import('@/features/boletos/MisBoletosPage'));
+const Boleto = lazy(() => import('@/features/boletos/BoletoPage'));
 const Ayuda = lazy(() => import('@/features/informacion/AyudaPage'));
 const Privacidad = lazy(() => import('@/features/informacion/PrivacidadPage'));
 const Legal = lazy(() => import('@/features/informacion/LegalPage'));
@@ -56,6 +61,11 @@ export const rutas: RouteObject[] = [
     children: [
       { path: '/', element: <Inicio /> },
       { path: '/eventos/:id', element: <DetalleEvento /> },
+      { path: '/eventos/:id/asientos', element: <Asientos /> },
+      { path: '/pago', element: <Pago /> },
+      { path: '/ordenes/:id', element: <Orden /> },
+      { path: '/boletos', element: <MisBoletos /> },
+      { path: '/boletos/:id', element: <Boleto /> },
       { path: '/ayuda', element: <Ayuda /> },
       { path: '/privacidad', element: <Privacidad /> },
       { path: '/legal', element: <Legal /> },

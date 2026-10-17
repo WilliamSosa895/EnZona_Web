@@ -26,13 +26,11 @@ import {
   SelectorCantidad,
   Tarjeta,
 } from '@/ui';
+import { MAXIMO_POR_ORDEN, rutaPago } from '@/features/compra/pedido';
 import { urlComoLlegar } from '@/features/mapa/geo';
 import estilos from './Eventos.module.css';
 
 const MiniMapa = lazy(() => import('@/features/mapa/Mapas').then((m) => ({ default: m.MiniMapa })));
-
-/** Boletos máximos por orden (ORDER_MAX_TICKETS de la API, 10 por defecto). */
-export const MAXIMO_POR_ORDEN = 10;
 
 /**
  * Detalle del evento (RF-09 a RF-11). En eventos de pago se elige el tipo y la cantidad (hasta la disponibilidad
@@ -117,7 +115,7 @@ function Detalle({ evento, boletosPropios }: { evento: Evento; boletosPropios: n
     if (evento.requiereAsiento) {
       navegar(`/eventos/${evento.id}/asientos?tipo=${tipo?.id ?? ''}&cantidad=${cantidad}`);
     } else if (evento.esDePago) {
-      navegar(`/pago?evento=${evento.id}&tipo=${tipo?.id ?? ''}&cantidad=${cantidad}`);
+      navegar(rutaPago({ eventoId: evento.id, tipoId: tipo?.id ?? null, cantidad, asientosIds: [] }));
     } else {
       setConfirmando(true);
     }
