@@ -36,6 +36,21 @@ describe('cliente HTTP de la API', () => {
     configurarSesion({ obtenerToken: () => null, alNoAutenticado: () => undefined });
   });
 
+  it('un 401 por contraseña incorrecta no cierra la sesión', async () => {
+    const alNoAutenticado = vi.fn();
+    configurarSesion({ obtenerToken: () => 'token', alNoAutenticado });
+    servidor.use(
+      http.put('http://localhost:8080/api/usuarios/me/contrasena', () =>
+        HttpResponse.json({ status: 401, codigo: 'CREDENCIALES_INVALIDAS' }, { status: 401 }),
+      ),
+    );
+    await expect(peticion('PUT', '/api/usuarios/me/contrasena', { cuerpo: {} })).rejects.toMatchObject({
+      codigo: 'CREDENCIALES_INVALIDAS',
+    });
+    expect(alNoAutenticado).not.toHaveBeenCalled();
+    configurarSesion({ obtenerToken: () => null, alNoAutenticado: () => undefined });
+  });
+
   it('no envía el token a los endpoints públicos', async () => {
     configurarSesion({ obtenerToken: () => 'token', alNoAutenticado: () => undefined });
     let cabecera: string | null = 'sin leer';
