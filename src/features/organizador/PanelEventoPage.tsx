@@ -114,7 +114,7 @@ function Panel({ evento, reporte, errorReporte }: { evento: Evento; reporte?: Re
       <div className={estilos.panel}>
         <header className={estilos.panelCabecera}>
           <div>
-            <h1 className={estilos.panelTitulo}>{evento.nombre}</h1>
+            <h2 className={estilos.panelTitulo}>{evento.nombre}</h2>
             <p className={estilos.apoyo}>
               {evento.lugar} · {corto(evento.fechaHoraInicio)}
             </p>
@@ -154,7 +154,14 @@ function Panel({ evento, reporte, errorReporte }: { evento: Evento; reporte?: Re
 
             <h2 className={estilos.subtitulo}>Ventas por tipo de boleto</h2>
             {reporte && reporte.porTipo.length > 0 ? (
-              <div className={estilos.tablaDesplazable}>
+              <div
+                className={estilos.tablaDesplazable}
+                role="region"
+                aria-label="Ventas por tipo de boleto"
+                // Una región que se desplaza en horizontal debe poder enfocarse para moverla con el teclado.
+                // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
+                tabIndex={0}
+              >
                 <table className={estilos.tabla}>
                   <thead>
                     <tr>

@@ -127,7 +127,7 @@ function DetalleBoleto({ boleto, hermanos }: { boleto: Boleto; hermanos: Boleto[
               <span>{total > 1 ? `Boleto ${posicion} de ${total}` : 'Boleto EnZona'}</span>
               <EtiquetaEstadoBoleto estado={boleto.estado} />
             </div>
-            <h1 className={estilos.talonNombre}>{boleto.eventoNombre}</h1>
+            <h2 className={estilos.talonNombre}>{boleto.eventoNombre}</h2>
             <dl className={estilos.talonLista}>
               <DatoTalon icono={<MdCalendarMonth />} etiqueta="Fecha" valor={corto(boleto.fechaHoraInicio)} />
               <DatoTalon icono={<MdLocationOn />} etiqueta="Lugar" valor={boleto.lugar} />

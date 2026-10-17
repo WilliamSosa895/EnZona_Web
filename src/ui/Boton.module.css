@@ -31,7 +31,7 @@
 }
 
 .destacado:hover:not(:disabled) {
-  background: var(--coral-oscuro);
+  background: var(--coral-hover);
 }
 
 .peligro {

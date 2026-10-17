@@ -155,7 +155,7 @@ function Plano({ evento, asientos, tipoId, cantidad }: PlanoProps) {
         principal={
           <>
             <div>
-              <h1 className={estilos.tituloEvento}>{evento.nombre}</h1>
+              <h2 className={estilos.tituloEvento}>{evento.nombre}</h2>
               <p className={estilos.apoyo}>
                 {libres} asientos libres de {asientos.length}
                 {tipo ? ` · ${tipo.nombre}` : ''}

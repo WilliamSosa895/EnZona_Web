@@ -15,6 +15,8 @@
   --coral: #f2643b; /* tertiary: acción destacada con texto tinta */
   --coral-oscuro: #d64e2a;
   --coral-suave: #fde9e2;
+  --coral-hover: #f5805d; /* fondo al pasar el cursor: tinta sobre él 6:1 */
+  --coral-texto: #b23c1b; /* coral para texto sobre fondos claros (≥ 5.4:1) */
   --azul-tinte-50: #eaf0f7;
   --azul-tinte-100: #d7e1ee;
   --azul-tinte-200: #b9c9dd;
