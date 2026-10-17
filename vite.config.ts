@@ -21,6 +21,10 @@ export default defineConfig({
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },
+  // Se preparan desde el arranque: si Vite las descubre a mitad de la sesión recarga la página.
+  optimizeDeps: {
+    include: ['qrcode', 'leaflet', 'react-leaflet', '@zxing/browser'],
+  },
   server: {
     // El puerto 5173 es el origen que la API permite por defecto (CORS_ORIGINS).
     port: 5173,

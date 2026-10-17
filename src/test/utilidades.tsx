@@ -5,7 +5,7 @@ import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { configurarSesion } from '@/api/http';
 import { crearClienteConsultas } from '@/app/consultas';
-import { FUTURO, rutas } from '@/app/rutas';
+import { rutas } from '@/app/rutas';
 import { guardarSesion } from '@/auth/almacen';
 import { SesionProvider } from '@/auth/SesionContext';
 import { base } from '@/mocks/manejadores';
@@ -31,12 +31,12 @@ export function sesionComo(correo: string, accesoPersonal = false) {
 export function renderizarApp(ruta: string) {
   const cliente = crearClienteConsultas();
   cliente.setDefaultOptions({ queries: { retry: false, staleTime: 0 } });
-  const enrutador = createMemoryRouter(rutas, { initialEntries: [ruta], future: FUTURO });
+  const enrutador = createMemoryRouter(rutas, { initialEntries: [ruta] });
   const usuario = userEvent.setup();
   const resultado = render(
     <QueryClientProvider client={cliente}>
       <SesionProvider>
-        <RouterProvider router={enrutador} future={{ v7_startTransition: true }} />
+        <RouterProvider router={enrutador} />
       </SesionProvider>
     </QueryClientProvider>,
   );
