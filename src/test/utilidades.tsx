@@ -3,6 +3,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
+import { configurarSesion } from '@/api/http';
 import { crearClienteConsultas } from '@/app/consultas';
 import { FUTURO, rutas } from '@/app/rutas';
 import { guardarSesion } from '@/auth/almacen';
@@ -21,6 +22,8 @@ export function sesionComo(correo: string, accesoPersonal = false) {
     usuario: { id: u.id, nombre: u.nombre, correo: u.correo, roles: u.roles },
     accesoPersonal,
   });
+  // Para las llamadas directas a la API desde una prueba (antes de montar la aplicación).
+  configurarSesion({ obtenerToken: () => token, alNoAutenticado: () => undefined });
   return u;
 }
 

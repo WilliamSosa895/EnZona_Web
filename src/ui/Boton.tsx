@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes, ReactNode } from 'react';
+import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react';
 import { Link, type LinkProps } from 'react-router-dom';
 import estilos from './Boton.module.css';
 
@@ -13,17 +13,13 @@ interface BotonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 /** Botón principal de la marca (píldora de 52 px), equivalente a BotonEnZona en Android. */
-export function Boton({
-  variante = 'normal',
-  cargando = false,
-  icono,
-  children,
-  disabled,
-  className,
-  ...resto
-}: BotonProps) {
+export const Boton = forwardRef<HTMLButtonElement, BotonProps>(function Boton(
+  { variante = 'normal', cargando = false, icono, children, disabled, className, ...resto },
+  ref,
+) {
   return (
     <button
+      ref={ref}
       type="button"
       {...resto}
       disabled={disabled || cargando}
@@ -34,7 +30,7 @@ export function Boton({
       {children}
     </button>
   );
-}
+});
 
 interface SecundarioProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   icono?: ReactNode;
