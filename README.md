@@ -4,13 +4,13 @@ Aplicación web de **EnZona**, la plataforma de descubrimiento de eventos locale
 
 La interfaz replica la app Android (mismos colores, componentes, textos y flujos) y se adapta a cualquier ancho de pantalla: barra de navegación inferior en el teléfono y riel lateral en escritorio (RNF-06).
 
-|            |                                                                                           |
-| ---------- | ----------------------------------------------------------------------------------------- |
-| Versión    | 0.1.0                                                                                     |
-| Stack      | React 18 · TypeScript 5 (estricto) · Vite 5 · React Router 6 · TanStack Query 5           |
-| Pruebas    | Vitest + Testing Library + MSW (unitarias e integración) · Playwright (extremo a extremo) |
-| Calidad    | ESLint 9 (TypeScript, hooks, accesibilidad) · Prettier · cobertura mínima en la CI        |
-| Despliegue | Contenedor nginx sin privilegios o Cloudflare Pages                                       |
+|            |                                                                                                                      |
+| ---------- | -------------------------------------------------------------------------------------------------------------------- |
+| Versión    | 0.1.0                                                                                                                |
+| Stack      | React 18 · TypeScript 5 (estricto) · Vite 6 · React Router 7 · TanStack Query 5                                      |
+| Pruebas    | Vitest + Testing Library + MSW (unitarias e integración) · Playwright + axe-core (extremo a extremo y accesibilidad) |
+| Calidad    | ESLint 9 (TypeScript, hooks, accesibilidad) · Prettier · cobertura mínima en la CI                                   |
+| Despliegue | Contenedor nginx sin privilegios o Cloudflare Pages                                                                  |
 
 ## Qué hace
 
@@ -58,18 +58,18 @@ El código de verificación de las cuentas nuevas es `123456`. En la pantalla de
 
 ## Scripts
 
-| Comando                           | Qué hace                                                            |
-| --------------------------------- | ------------------------------------------------------------------- |
-| `npm run dev`                     | Servidor de desarrollo contra la API configurada                    |
-| `npm run dev:demo`                | Servidor de desarrollo con la API simulada                          |
-| `npm run build`                   | Comprueba los tipos y compila a `dist/`                             |
-| `npm run preview`                 | Sirve la compilación de `dist/`                                     |
-| `npm run lint`                    | ESLint (TypeScript, React Hooks, accesibilidad jsx-a11y)            |
-| `npm run format` / `format:check` | Prettier                                                            |
-| `npm run typecheck`               | TypeScript sin emitir archivos                                      |
-| `npm test`                        | Pruebas unitarias y de integración (Vitest)                         |
-| `npm run test:coverage`           | Lo anterior con reporte de cobertura en `coverage/`                 |
-| `npm run e2e`                     | Pruebas de extremo a extremo con Playwright (teléfono y escritorio) |
+| Comando                           | Qué hace                                                                                       |
+| --------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `npm run dev`                     | Servidor de desarrollo contra la API configurada                                               |
+| `npm run dev:demo`                | Servidor de desarrollo con la API simulada                                                     |
+| `npm run build`                   | Comprueba los tipos y compila a `dist/`                                                        |
+| `npm run preview`                 | Sirve la compilación de `dist/`                                                                |
+| `npm run lint`                    | ESLint (TypeScript, React Hooks, accesibilidad jsx-a11y)                                       |
+| `npm run format` / `format:check` | Prettier                                                                                       |
+| `npm run typecheck`               | TypeScript sin emitir archivos                                                                 |
+| `npm test`                        | Pruebas unitarias y de integración (Vitest)                                                    |
+| `npm run test:coverage`           | Lo anterior con reporte de cobertura en `coverage/`                                            |
+| `npm run e2e`                     | Pruebas de extremo a extremo y de accesibilidad (axe) con Playwright, en teléfono y escritorio |
 
 ## Estructura
 

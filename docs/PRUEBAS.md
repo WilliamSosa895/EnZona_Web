@@ -7,7 +7,8 @@
 | Unitarias                | Vitest                         | Funciones puras: fechas en la zona del evento, formato de importes, validaciones idénticas a la API, filtros, pedido de compra, etiquetas de boleto | `src/lib/*.test.ts`, funciones de cada módulo |
 | Cliente HTTP             | Vitest + MSW                   | Token, endpoints públicos, Problem Details, paginación por cabeceras, cierre de sesión solo ante `NO_AUTENTICADO`                                   | `src/api/http.test.ts`                        |
 | Integración de pantallas | Vitest + Testing Library + MSW | La aplicación completa (rutas, guardas, sesión, caché) contra la API simulada; se interactúa como un usuario, por rol y nombre accesible            | `src/features/*/*.test.tsx`                   |
-| Extremo a extremo        | Playwright                     | Flujos completos en un navegador real, en un teléfono (Pixel 7) y en escritorio, sobre el modo demostración                                         | `e2e/`                                        |
+| Extremo a extremo        | Playwright                     | Flujos completos en un navegador real, en un teléfono (Pixel 7) y en escritorio, sobre el modo demostración                                         | `e2e/flujos.spec.ts`                          |
+| Accesibilidad            | Playwright + axe-core          | Reglas WCAG 2.1 A y AA en las pantallas principales de cada rol, en los dos tamaños                                                                 | `e2e/accesibilidad.spec.ts`                   |
 
 La API simulada (`src/mocks`) reproduce el contrato de la API: rutas, códigos de estado, `codigo` de error, cabeceras de paginación, `Idempotency-Key`, pagos pendientes y las reglas de negocio que la interfaz necesita ver. Cada prueba parte de datos limpios (`reiniciarBase`).
 
@@ -23,7 +24,7 @@ npm run e2e              # extremo a extremo; levanta el modo demostración si n
 
 Si el contenedor ya tiene un Chromium instalado y no puede descargar navegadores, indica su ruta con `PW_CHROMIUM=/ruta/a/chrome npm run e2e`.
 
-La CI ejecuta formato, ESLint, tipos, pruebas con cobertura, auditoría de dependencias, compilación y, en un trabajo aparte, las pruebas de extremo a extremo. La cobertura mínima es de 80 % de líneas y sentencias, 70 % de ramas y 65 % de funciones; hoy está en torno al 84 % de líneas.
+La CI ejecuta formato, ESLint, tipos, pruebas con cobertura, auditoría de dependencias, compilación y, en un trabajo aparte, las pruebas de extremo a extremo. La cobertura mínima es de 80 % de líneas y sentencias, 70 % de ramas y 65 % de funciones; hoy está en torno al 83 % de líneas.
 
 ## Trazabilidad con los casos de prueba
 
@@ -63,6 +64,6 @@ Otros comportamientos con prueba: N asientos distintos sin superar la cantidad (
 
 1. Recorrer los flujos de cada rol en un teléfono real (Chrome en Android) y en Safari en iOS.
 2. Escanear un boleto con la cámara (requiere HTTPS) y comprobar la vibración y el resultado.
-3. Navegar solo con el teclado: orden del foco, diálogos (Escape y foco atrapado) y enlace «Saltar al contenido».
+3. Navegar solo con el teclado (axe no lo cubre): orden del foco, diálogos (Escape y foco atrapado) y enlace «Saltar al contenido».
 4. Revisar con un lector de pantalla (TalkBack o VoiceOver) el plano de asientos y el resultado de la validación.
 5. Comprobar el contraste y el diseño con zoom del navegador al 200 %.

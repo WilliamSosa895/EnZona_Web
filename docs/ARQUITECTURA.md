@@ -122,6 +122,10 @@ flowchart TD
 
 La orden es todo o nada: emite los N boletos o ninguno. La `Idempotency-Key` se crea una vez por intento y se conserva si la red falla (reintentar no cobra dos veces); se renueva cuando la API da un resultado definitivo.
 
+## Errores inesperados
+
+Cada marco de rutas tiene un `errorElement` (`ErrorRuta`): muestra «Algo salió mal» sin detalles técnicos y permite recargar. Si el error es un fragmento que ya no existe (se publicó una versión nueva mientras la pestaña estaba abierta), recarga una vez para tomar la versión nueva.
+
 ## Diseño responsivo
 
 - Un solo árbol de componentes para todos los anchos; el diseño cambia con CSS (rejilla y consultas de medios), no con ramas en JavaScript.
@@ -134,6 +138,7 @@ La orden es todo o nada: emite los N boletos o ninguno. La `Idempotency-Key` se 
 | Decisión                                          | Motivo                                                                                                                            |
 | ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | React + Vite + TypeScript estricto                | Stack del proyecto (estudio técnico); tipos compartidos con el contrato de la API                                                 |
+| React Router 7 en modo de datos                   | Rutas con carga diferida, `errorElement` por marco y sin las vulnerabilidades de redirección de la versión 6                      |
 | TanStack Query en lugar de un almacén global      | El estado es casi todo del servidor; la caché, los reintentos y la invalidación ya están resueltos                                |
 | CSS Modules con tokens                            | Estilos aislados por componente y los mismos valores de `Color.kt` y `Theme.kt` de Android, sin dependencia de un framework de UI |
 | MSW para pruebas y demostración                   | Las pruebas recorren el cliente HTTP real contra el contrato de la API; la demostración funciona sin backend                      |
