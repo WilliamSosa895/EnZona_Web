@@ -68,7 +68,7 @@ Se sigue [Versionado Semántico](https://semver.org/lang/es/). Para publicar:
 
 ```bash
 git switch -c release/0.2.0 develop
-# actualizar "version" en package.json, env.version y CHANGELOG.md
+# actualizar "version" en package.json (la app la toma de ahí) y CHANGELOG.md
 git commit -am "chore(release): prepara la versión 0.2.0"
 git switch main && git merge --no-ff release/0.2.0
 git tag -a v0.2.0 -m "EnZona Web 0.2.0"
