@@ -1,0 +1,466 @@
+/* ---------------------------------------------------------------- textos comunes */
+.tituloEvento {
+  color: var(--on-surface);
+  font: var(--title-medium);
+}
+
+.apoyo {
+  color: var(--on-surface-variant);
+  font: var(--body-medium);
+}
+
+.subtitulo {
+  color: var(--on-surface);
+  font: var(--title-small);
+}
+
+.notaPie {
+  color: var(--on-surface-variant);
+  font: var(--body-small);
+}
+
+/* ---------------------------------------------------------------- herramientas del plano */
+.herramientas {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-m);
+}
+
+.botonesPlano {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-s);
+}
+
+.botonesPlano > :first-child {
+  flex: 1;
+  min-width: 0;
+}
+
+.zoom {
+  display: flex;
+  gap: var(--esp-xs);
+}
+
+.leyenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-l);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.leyenda li {
+  --butaca: 22px;
+
+  display: flex;
+  align-items: center;
+  gap: var(--esp-xs);
+  color: var(--on-surface-variant);
+  font: var(--label-large);
+}
+
+/* ---------------------------------------------------------------- plano */
+.plano {
+  --butaca: 30px;
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-l);
+  margin: 0 calc(-1 * var(--margen));
+  padding: var(--esp-l) 0;
+}
+
+.escenario {
+  display: grid;
+  place-items: center;
+  width: 72%;
+  max-width: 520px;
+  height: 36px;
+  margin: 0 auto var(--esp-s);
+  border-radius: 8px 8px 60px 60px;
+  background: var(--primary);
+  color: var(--on-primary);
+  font: var(--label-large);
+}
+
+.seccion {
+  display: flex;
+  flex-direction: column;
+}
+
+.nombreSeccion {
+  padding: 0 var(--margen) var(--esp-s);
+  color: var(--on-surface);
+  font: var(--title-small);
+}
+
+/* Un desplazamiento por sección: todas sus filas se mueven juntas */
+.desplazable {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+}
+
+.filas {
+  display: flex;
+  flex-direction: column;
+  width: max-content;
+  min-width: 100%;
+  padding: 0 var(--esp-l) 10px var(--esp-m);
+}
+
+.fila {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 0;
+}
+
+.letraFila {
+  flex: none;
+  width: 20px;
+  color: var(--on-surface-variant);
+  font: var(--label-medium);
+  text-align: center;
+}
+
+.celda {
+  display: flex;
+}
+
+.pasillo {
+  width: calc(var(--butaca) / 2);
+}
+
+.butaca {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: var(--butaca);
+  height: var(--butaca);
+  margin: 2px;
+  padding: 0;
+  border: 1px solid var(--secondary);
+  border-radius: 7px 7px 3px 3px;
+  background: var(--superficie);
+  color: var(--on-surface);
+  font-size: max(9px, calc(var(--butaca) * 0.38));
+  font-weight: 500;
+  line-height: 1;
+  transition:
+    background-color 0.12s,
+    transform 0.12s;
+}
+
+.butaca svg {
+  width: 55%;
+  height: 55%;
+}
+
+button.butaca {
+  cursor: pointer;
+}
+
+button.butaca:hover:not(:disabled) {
+  background: var(--azul-tinte-50);
+}
+
+button.butaca:focus-visible {
+  outline: 3px solid var(--coral);
+  outline-offset: 2px;
+}
+
+.butaca.ocupada {
+  border-color: transparent;
+  background: var(--outline-variant);
+  color: var(--on-surface-variant);
+}
+
+.butaca.reservada {
+  border-color: transparent;
+  background: var(--aviso-contenedor);
+  color: var(--sobre-aviso);
+}
+
+.butaca:disabled {
+  cursor: not-allowed;
+}
+
+.butaca.elegida,
+button.butaca.elegida:hover {
+  border: 2px solid var(--tertiary);
+  background: var(--tertiary);
+  color: var(--on-tertiary);
+}
+
+/* ---------------------------------------------------------------- selección */
+.seleccion {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-s);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-xs) var(--esp-s);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 8px 0 12px;
+  border: 0;
+  border-radius: var(--radio-s);
+  background: var(--tertiary-container);
+  color: var(--on-tertiary-container);
+  font: var(--label-large);
+  cursor: pointer;
+}
+
+.chip svg {
+  font-size: 18px;
+}
+
+.chipOcupado {
+  background: var(--error-contenedor);
+  color: var(--sobre-error);
+}
+
+.dialogoEvento {
+  color: var(--on-surface);
+  font: var(--title-medium);
+}
+
+.dialogoAsiento {
+  color: var(--primary);
+  font: var(--title-small);
+}
+
+/* ---------------------------------------------------------------- pago */
+.etiquetaTarjeta {
+  margin-bottom: var(--esp-xs);
+  color: var(--on-surface-variant);
+  font: var(--label-large);
+}
+
+.tituloOrden {
+  margin-bottom: var(--esp-m);
+  color: var(--on-surface);
+  font: var(--title-medium);
+}
+
+.datos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-s);
+}
+
+.metodos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-s);
+}
+
+.opcionPago {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-m);
+  padding: var(--esp-m) var(--esp-l);
+  border: 1.5px solid var(--primary);
+  border-radius: var(--radio-m);
+  background: var(--secondary-container);
+}
+
+.opcionPago > svg {
+  flex: none;
+  color: var(--primary);
+  font-size: 24px;
+}
+
+.opcionPago div {
+  display: flex;
+  flex-direction: column;
+}
+
+.opcionPago strong {
+  color: var(--on-surface);
+  font: var(--title-small);
+}
+
+.opcionPago span {
+  color: var(--on-surface-variant);
+  font: var(--body-small);
+}
+
+.seguridad {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--esp-s);
+  color: var(--on-surface-variant);
+  font: var(--body-small);
+}
+
+.seguridad svg {
+  flex: none;
+  margin-top: 2px;
+  font-size: 16px;
+}
+
+/* ---------------------------------------------------------------- resultado de la orden */
+.paginaOrden {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-m);
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: var(--esp-s) var(--margen) var(--esp-xl);
+}
+
+.encabezadoOrden {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-m);
+}
+
+.encabezadoOrden svg {
+  flex: none;
+  font-size: 32px;
+}
+
+.iconoExito {
+  color: var(--exito);
+}
+
+.iconoAviso {
+  color: var(--aviso);
+}
+
+.iconoError {
+  color: var(--error);
+}
+
+.tituloResultado {
+  color: var(--tinta);
+  font: var(--headline-small);
+}
+
+.totalOrden {
+  margin-top: var(--esp-m);
+  color: var(--on-surface);
+  font: var(--title-small);
+}
+
+/* Carrusel horizontal en móvil; rejilla a partir de 640 px */
+.carrusel {
+  display: grid;
+  grid-auto-columns: 220px;
+  grid-auto-flow: column;
+  gap: var(--esp-m);
+  margin: 0 calc(-1 * var(--margen));
+  padding: 4px var(--margen) var(--esp-s);
+  overflow-x: auto;
+  list-style: none;
+  scroll-padding: 0 var(--margen);
+  scroll-snap-type: x mandatory;
+}
+
+.carrusel li {
+  scroll-snap-align: start;
+}
+
+.tarjetaBoleto {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--esp-xs);
+  height: 100%;
+  padding: var(--esp-m);
+  border-radius: var(--radio-l);
+  background: var(--superficie);
+  box-shadow: var(--sombra-tarjeta);
+  color: inherit;
+  text-decoration: none;
+}
+
+.tarjetaBoleto:hover {
+  background: var(--superficie-baja);
+}
+
+.tarjetaBoletoCabecera {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-s);
+  color: var(--on-surface);
+  font: var(--title-small);
+}
+
+.tarjetaBoletoCabecera svg {
+  color: var(--secondary);
+  font-size: 36px;
+}
+
+.tarjetaBoletoDetalle {
+  display: -webkit-box;
+  min-height: 2lh;
+  overflow: hidden;
+  color: var(--on-surface-variant);
+  font: var(--body-small);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.codigo {
+  margin-bottom: var(--esp-xs);
+  color: var(--on-surface-variant);
+  font: var(--label-medium);
+  letter-spacing: 0.04em;
+}
+
+.accionesOrden {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-s);
+  margin-top: var(--esp-m);
+}
+
+@media (min-width: 640px) {
+  .soloMovil {
+    display: none;
+  }
+
+  .carrusel {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-auto-columns: unset;
+    grid-auto-flow: row;
+    margin: 0;
+    padding: 4px 0;
+    overflow: visible;
+  }
+
+  .accionesOrden {
+    flex-direction: row-reverse;
+    justify-content: flex-start;
+  }
+
+  .accionesOrden > * {
+    width: auto;
+    min-width: 220px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .plano {
+    margin: 0;
+    border-radius: var(--radio-l);
+    background: var(--superficie-baja);
+  }
+}
