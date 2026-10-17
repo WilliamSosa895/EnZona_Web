@@ -15,6 +15,9 @@ const Pago = lazy(() => import('@/features/compra/PagoPage'));
 const Orden = lazy(() => import('@/features/compra/OrdenPage'));
 const MisBoletos = lazy(() => import('@/features/boletos/MisBoletosPage'));
 const Boleto = lazy(() => import('@/features/boletos/BoletoPage'));
+const Perfil = lazy(() => import('@/features/perfil/PerfilPage'));
+const EditarDatos = lazy(() => import('@/features/perfil/EditarDatosPage'));
+const Seguridad = lazy(() => import('@/features/perfil/SeguridadPage'));
 const Ayuda = lazy(() => import('@/features/informacion/AyudaPage'));
 const Privacidad = lazy(() => import('@/features/informacion/PrivacidadPage'));
 const Legal = lazy(() => import('@/features/informacion/LegalPage'));
@@ -66,6 +69,9 @@ export const rutas: RouteObject[] = [
       { path: '/ordenes/:id', element: <Orden /> },
       { path: '/boletos', element: <MisBoletos /> },
       { path: '/boletos/:id', element: <Boleto /> },
+      { path: '/perfil', element: <Perfil /> },
+      { path: '/perfil/datos', element: <EditarDatos /> },
+      { path: '/perfil/seguridad', element: <Seguridad /> },
       { path: '/ayuda', element: <Ayuda /> },
       { path: '/privacidad', element: <Privacidad /> },
       { path: '/legal', element: <Legal /> },

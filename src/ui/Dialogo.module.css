@@ -39,9 +39,17 @@
 .acciones {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   justify-content: flex-end;
   gap: var(--esp-s);
   padding: var(--esp-xl);
+}
+
+/* Los botones rellenos dentro de un diálogo miden lo que su texto (como el Button de Material) */
+.acciones > * {
+  width: auto;
+  min-height: 44px;
+  padding-inline: var(--esp-l);
 }
 
 @keyframes aparecer {
