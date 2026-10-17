@@ -21,6 +21,8 @@ const Seguridad = lazy(() => import('@/features/perfil/SeguridadPage'));
 const MisEventos = lazy(() => import('@/features/organizador/MisEventosPage'));
 const FormularioEvento = lazy(() => import('@/features/organizador/FormularioEventoPage'));
 const PanelEvento = lazy(() => import('@/features/organizador/PanelEventoPage'));
+const Escaner = lazy(() => import('@/features/validador/EscanerPage'));
+const Admin = lazy(() => import('@/features/admin/AdminPage'));
 const Ayuda = lazy(() => import('@/features/informacion/AyudaPage'));
 const Privacidad = lazy(() => import('@/features/informacion/PrivacidadPage'));
 const Legal = lazy(() => import('@/features/informacion/LegalPage'));
@@ -104,6 +106,22 @@ export const rutas: RouteObject[] = [
         element: (
           <RequiereRol roles={['ORGANIZADOR']}>
             <FormularioEvento />
+          </RequiereRol>
+        ),
+      },
+      {
+        path: '/validador',
+        element: (
+          <RequiereRol roles={['VALIDADOR', 'ORGANIZADOR', 'ADMIN']}>
+            <Escaner />
+          </RequiereRol>
+        ),
+      },
+      {
+        path: '/admin',
+        element: (
+          <RequiereRol roles={['ADMIN']}>
+            <Admin />
           </RequiereRol>
         ),
       },
