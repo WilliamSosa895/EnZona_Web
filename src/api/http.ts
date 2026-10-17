@@ -117,9 +117,11 @@ async function ejecutar(metodo: string, ruta: string, opciones: OpcionesPeticion
   }
 
   if (!respuesta.ok) {
-    const problema = await leerProblema(respuesta);
-    if (respuesta.status === 401 && token) sesion.alNoAutenticado();
-    throw new ApiError(problema);
+    const error = new ApiError(await leerProblema(respuesta));
+    // Solo un token vencido o inválido cierra la sesión; un 401 CREDENCIALES_INVALIDAS (contraseña actual
+    // incorrecta al cambiarla) es un error del formulario, no de la sesión.
+    if (respuesta.status === 401 && token && error.codigo === 'NO_AUTENTICADO') sesion.alNoAutenticado();
+    throw error;
   }
   return respuesta;
 }

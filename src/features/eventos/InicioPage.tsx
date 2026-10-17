@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { MdArrowDropDown, MdClose, MdMyLocation, MdPlace, MdSearch, MdSearchOff } from 'react-icons/md';
@@ -131,6 +131,9 @@ export default function InicioPage() {
     setAvisoUbicacion(null);
     try {
       setCoordenadas(await obtenerUbicacion());
+      const nuevas = { ...preferencias, usarUbicacion: true };
+      setPreferencias(nuevas);
+      guardarPreferencias(nuevas);
       setEligiendoZona(false);
       cambiar({ ...filtros, lugar: null });
     } catch (e) {
@@ -140,6 +143,20 @@ export default function InicioPage() {
       setBuscandoUbicacion(false);
     }
   }
+
+  // "Contenido basado en mi ubicación" (Perfil): si está activo se pide la ubicación al entrar; si el navegador
+  // la niega, se sigue con la ciudad elegida sin interrumpir.
+  useEffect(() => {
+    if (!preferencias.usarUbicacion) return;
+    let vigente = true;
+    obtenerUbicacion()
+      .then((c) => vigente && setCoordenadas(c))
+      .catch(() => undefined);
+    return () => {
+      vigente = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- solo al montar la pantalla
+  }, []);
 
   const resumen =
     totalMostrado === 1

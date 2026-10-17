@@ -279,6 +279,8 @@ const identidad = [
     if (!u) return noAutenticado();
     const { nombre, telefono } = (await request.json()) as { nombre: string; telefono: string | null };
     if (!nombre?.trim()) return cuerpoInvalido([{ campo: 'nombre', mensaje: 'El nombre es obligatorio' }]);
+    if (telefono && !/^\+?[0-9]{10,15}$/.test(telefono))
+      return cuerpoInvalido([{ campo: 'telefono', mensaje: 'El teléfono debe tener de 10 a 15 dígitos' }]);
     if (telefono !== u.telefono) u.telefonoVerificado = false;
     u.nombre = nombre.trim();
     u.telefono = telefono || null;
@@ -290,7 +292,9 @@ const identidad = [
     const u = usuarioDe(request);
     if (!u) return noAutenticado();
     const { actual, nueva } = (await request.json()) as { actual: string; nueva: string };
-    if (actual !== u.contrasena) return problema(401, 'CREDENCIALES_INVALIDAS', 'Credenciales inválidas');
+    if (!/^(?=.*[A-Za-z])(?=.*\d).{8,72}$/.test(nueva ?? ''))
+      return cuerpoInvalido([{ campo: 'nueva', mensaje: 'Mínimo 8 caracteres, con letras y números' }]);
+    if (actual !== u.contrasena) return problema(401, 'CREDENCIALES_INVALIDAS', 'La contraseña actual no es correcta');
     u.contrasena = nueva;
     return new HttpResponse(null, { status: 204 });
   }),

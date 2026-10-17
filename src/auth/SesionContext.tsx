@@ -24,13 +24,17 @@ export function SesionProvider({ children }: { children: ReactNode }) {
     [queryClient],
   );
 
-  // El cliente HTTP toma el token de aquí y avisa si la API responde 401.
-  useEffect(() => {
+  // El cliente HTTP toma el token de aquí y avisa si la API responde 401. Se configura durante el PRIMER
+  // render y no en un efecto: los efectos de los hijos corren antes que los del padre, y una pantalla ya
+  // cargada pediría sus datos con la configuración anterior (sin token o con el de otra sesión).
+  const cerrarRef = useRef(cerrar);
+  cerrarRef.current = cerrar;
+  useState(() =>
     configurarSesion({
       obtenerToken: () => sesionRef.current?.token ?? null,
-      alNoAutenticado: () => cerrar('Tu sesión terminó. Vuelve a iniciar sesión.'),
-    });
-  }, [cerrar]);
+      alNoAutenticado: () => cerrarRef.current('Tu sesión terminó. Vuelve a iniciar sesión.'),
+    }),
+  );
 
   // Cierre automático al vencer el token (no hay token de renovación en esta versión de la API).
   useEffect(() => {

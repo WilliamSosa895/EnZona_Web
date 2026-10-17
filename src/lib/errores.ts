@@ -33,7 +33,7 @@ const MENSAJES: Record<string, string> = {
   SERVICIO_EXTERNO_NO_DISPONIBLE: 'Un servicio externo no respondió. Intenta más tarde.',
 };
 
-const CON_DETALLE = new Set(['REGLA_NEGOCIO', 'POLITICA_MODIFICACION']);
+const CON_DETALLE = new Set(['REGLA_NEGOCIO', 'POLITICA_MODIFICACION', 'ROL_EN_USO']);
 
 /** Mensaje legible para cualquier error (de la API o inesperado). */
 export function mensajeDeError(error: unknown): string {
