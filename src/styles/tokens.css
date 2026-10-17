@@ -1,0 +1,102 @@
+/*
+ * Tokens de diseño de EnZona (paleta v2), tomados del tema de la app Android
+ * (ui/theme/Color.kt, Theme.kt y Dimensiones.kt) para que web y móvil se vean igual.
+ * Los colores de MARCA están separados de los SEMÁNTICOS. Parejas de texto verificadas (WCAG ≥ 4.5:1):
+ * blanco/azul marino 11.5:1 · blanco/azul profundo 5.5:1 · tinta/coral 4.95:1 · gris texto/blanco 5.3:1.
+ * No se usa texto blanco sobre coral (3.15:1) ni azul EnZona como color de texto pequeño (4.1:1).
+ */
+:root {
+  /* Marca */
+  --azul-marino: #1f3a5f; /* primary */
+  --azul-marino-presionado: #152840;
+  --azul-enzona: #2e86ab; /* acento: iconos y superficies */
+  --azul-profundo: #24708f; /* secondary: enlaces y texto azul pequeño */
+  --azul-degradado-inicio: #274c78;
+  --coral: #f2643b; /* tertiary: acción destacada con texto tinta */
+  --coral-oscuro: #d64e2a;
+  --coral-suave: #fde9e2;
+  --coral-hover: #f5805d; /* fondo al pasar el cursor: tinta sobre él 6:1 */
+  --coral-texto: #b23c1b; /* coral para texto sobre fondos claros (≥ 5.4:1) */
+  --azul-tinte-50: #eaf0f7;
+  --azul-tinte-100: #d7e1ee;
+  --azul-tinte-200: #b9c9dd;
+
+  /* Neutrales */
+  --tinta: #1b2432;
+  --gris-texto: #5d6d7e;
+  --gris-suave: #9aa6b6;
+  --linea: #d9dfea;
+  --fondo: #eef1f6;
+  --superficie: #ffffff;
+  --superficie-baja: #f6f8fb;
+  --superficie-alta: #e6ebf3;
+
+  /* Semánticos */
+  --exito: #2e9e5b;
+  --exito-contenedor: #e5f3ec;
+  --sobre-exito: #1e7a45;
+  --aviso: #f1b434;
+  --aviso-contenedor: #fbf0d5;
+  --sobre-aviso: #1f3a5f;
+  --error: #c0392b;
+  --error-contenedor: #f9e3e0;
+  --sobre-error: #8e2a1f;
+  --info-contenedor: #e3f0f6;
+  --sobre-info: #1b4f63;
+
+  /* Roles (Material 3 → paleta) */
+  --primary: var(--azul-marino);
+  --on-primary: #ffffff;
+  --primary-container: var(--azul-tinte-100);
+  --on-primary-container: var(--azul-marino);
+  --secondary: var(--azul-profundo);
+  --secondary-container: var(--azul-tinte-50);
+  --tertiary: var(--coral);
+  --on-tertiary: var(--tinta);
+  --tertiary-container: var(--coral-suave);
+  --on-tertiary-container: var(--tinta);
+  --surface-container-high: var(--azul-tinte-50);
+  --surface-container-highest: var(--azul-tinte-100);
+  --outline: var(--gris-suave);
+  --outline-variant: var(--linea);
+  --on-surface: var(--tinta);
+  --on-surface-variant: var(--gris-texto);
+
+  /* Tipografía (Roboto, como en Android). Ningún estilo baja de 11.5 px. */
+  --fuente: 'Roboto', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
+  --headline-medium: 700 26px/32px var(--fuente);
+  --headline-small: 600 22px/28px var(--fuente);
+  --title-large: 600 20px/26px var(--fuente);
+  --title-medium: 600 17px/22px var(--fuente);
+  --title-small: 500 15px/20px var(--fuente);
+  --body-large: 400 16px/24px var(--fuente);
+  --body-medium: 400 14px/20px var(--fuente);
+  --body-small: 400 13px/18px var(--fuente);
+  --label-large: 500 14px/20px var(--fuente);
+  --label-medium: 500 12.5px/16px var(--fuente);
+  --label-small: 500 11.5px/16px var(--fuente);
+
+  /* Formas */
+  --radio-xs: 6px;
+  --radio-s: 10px;
+  --radio-m: 12px; /* campos y chips cuadrados */
+  --radio-l: 20px; /* tarjetas */
+  --radio-xl: 28px; /* hojas y diálogos */
+
+  /* Espaciado (múltiplos de 4) */
+  --esp-xs: 4px;
+  --esp-s: 8px;
+  --esp-m: 12px;
+  --esp-l: 16px;
+  --esp-xl: 24px;
+  --esp-xxl: 32px;
+  --margen: 16px;
+
+  /* Tamaños */
+  --control: 48px; /* área táctil mínima */
+  --boton-principal: 52px;
+  --ancho-contenido: 1120px;
+  --sombra-barra: 0 -2px 12px rgb(27 36 50 / 10%);
+  --sombra-tarjeta: 0 1px 2px rgb(27 36 50 / 6%);
+  --sombra-dialogo: 0 12px 40px rgb(27 36 50 / 24%);
+}

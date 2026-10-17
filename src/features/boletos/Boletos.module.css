@@ -1,0 +1,306 @@
+/* ---------------------------------------------------------------- lista */
+.grupo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-m);
+  margin-top: var(--esp-m);
+}
+
+.subtitulo {
+  color: var(--on-surface-variant);
+  font: var(--title-small);
+}
+
+.lista {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--esp-m);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fila {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-m);
+  width: 100%;
+  padding: var(--esp-m);
+  border: 0;
+  border-radius: var(--radio-l);
+  background: var(--superficie);
+  box-shadow: var(--sombra-tarjeta);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.fila:hover {
+  background: var(--superficie-baja);
+}
+
+.fila:focus-visible {
+  outline: 3px solid var(--coral);
+  outline-offset: 2px;
+}
+
+.bloqueFecha {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 60px;
+  border-radius: var(--radio-s);
+  background: var(--tertiary-container);
+  color: var(--on-tertiary-container);
+}
+
+.bloqueDia {
+  font: var(--headline-small);
+}
+
+.bloqueMes {
+  font: var(--label-medium);
+}
+
+.atenuada .bloqueFecha {
+  background: var(--surface-container-high);
+  color: var(--on-surface-variant);
+}
+
+.filaTexto {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.filaNombre {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--on-surface);
+  font: var(--title-small);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.atenuada .filaNombre {
+  color: var(--on-surface-variant);
+}
+
+.posicion {
+  color: var(--secondary);
+  font: var(--label-medium);
+}
+
+.filaApoyo {
+  overflow: hidden;
+  color: var(--on-surface-variant);
+  font: var(--body-small);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.filaEstado {
+  margin-top: var(--esp-s);
+}
+
+.iconoQr {
+  flex: none;
+  color: var(--primary);
+  font-size: 32px;
+}
+
+.atenuada .iconoQr {
+  color: var(--outline);
+}
+
+/* ---------------------------------------------------------------- detalle del boleto */
+.paginaBoleto {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-l);
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 0 var(--margen) var(--esp-xl);
+}
+
+.navegacion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.navegacionTexto {
+  color: var(--on-surface);
+  font: var(--title-medium);
+}
+
+/* Talón: dos mitades con muescas que dejan ver el fondo y una línea de corte */
+.talon {
+  --muesca: 14px;
+
+  display: flex;
+  flex-direction: column;
+  filter: drop-shadow(0 2px 6px rgb(27 36 50 / 0.12));
+}
+
+.talonDatos,
+.talonQr {
+  position: relative;
+  padding: var(--esp-xl) var(--esp-xl) var(--esp-l);
+}
+
+.talonDatos {
+  border-radius: 24px 24px 0 0;
+  background: var(--primary);
+  color: var(--on-primary);
+  -webkit-mask:
+    radial-gradient(circle var(--muesca) at 0 100%, #0000 98%, #000) left / 51% 100% no-repeat,
+    radial-gradient(circle var(--muesca) at 100% 100%, #0000 98%, #000) right / 51% 100% no-repeat;
+  mask:
+    radial-gradient(circle var(--muesca) at 0 100%, #0000 98%, #000) left / 51% 100% no-repeat,
+    radial-gradient(circle var(--muesca) at 100% 100%, #0000 98%, #000) right / 51% 100% no-repeat;
+}
+
+.talonQr {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--esp-l) var(--esp-xl) var(--esp-xl);
+  border-radius: 0 0 24px 24px;
+  background: #fff;
+  -webkit-mask:
+    radial-gradient(circle var(--muesca) at 0 0, #0000 98%, #000) left / 51% 100% no-repeat,
+    radial-gradient(circle var(--muesca) at 100% 0, #0000 98%, #000) right / 51% 100% no-repeat;
+  mask:
+    radial-gradient(circle var(--muesca) at 0 0, #0000 98%, #000) left / 51% 100% no-repeat,
+    radial-gradient(circle var(--muesca) at 100% 0, #0000 98%, #000) right / 51% 100% no-repeat;
+}
+
+.corte {
+  height: 2px;
+  margin: 0 calc(var(--muesca) + 6px);
+  background: repeating-linear-gradient(90deg, var(--outline-variant) 0 10px, transparent 10px 17px);
+}
+
+.talonCabecera {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-s);
+  font: var(--label-large);
+}
+
+.talonCabecera > span:first-of-type {
+  flex: 1;
+}
+
+.talonIcono {
+  color: var(--tertiary);
+  font-size: 18px;
+}
+
+.talonNombre {
+  margin: var(--esp-m) 0 var(--esp-l);
+  color: var(--on-primary);
+  font: var(--headline-small);
+}
+
+.talonLista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-m);
+  margin: 0;
+}
+
+.talonPar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: var(--esp-m);
+}
+
+/* Sobre azul marino: blanco al 100 % para el valor y al 80 % para la etiqueta (≥ 7:1) */
+.dato {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--esp-s);
+}
+
+.datoIcono {
+  flex: none;
+  padding-top: 2px;
+  color: rgb(255 255 255 / 0.8);
+  font-size: 18px;
+}
+
+.dato dt {
+  color: rgb(255 255 255 / 0.8);
+  font: var(--label-medium);
+}
+
+.dato dd {
+  margin: 0;
+  white-space: pre-line;
+  color: var(--on-primary);
+  font: var(--body-large);
+}
+
+.qr {
+  display: block;
+  width: 82%;
+  max-width: 320px;
+  height: auto;
+  aspect-ratio: 1;
+  background: #fff;
+  image-rendering: pixelated;
+}
+
+.referencia {
+  margin-top: var(--esp-m);
+  color: #000;
+  font: var(--title-large);
+  letter-spacing: 1.5px;
+}
+
+.referenciaEtiqueta {
+  color: rgb(0 0 0 / 0.6);
+  font: var(--label-medium);
+}
+
+.nota {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--esp-s);
+  color: var(--on-surface-variant);
+  font: var(--body-small);
+  text-align: center;
+}
+
+.nota svg {
+  flex: none;
+  font-size: 18px;
+}
+
+@media (min-width: 840px) {
+  .lista {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Al imprimir solo queda el talón */
+@media print {
+  .navegacion,
+  .nota,
+  .paginaBoleto > button,
+  .paginaBoleto > [role='status'] {
+    display: none;
+  }
+
+  .talon {
+    filter: none;
+  }
+}

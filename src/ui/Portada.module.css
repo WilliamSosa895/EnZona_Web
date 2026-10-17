@@ -1,0 +1,58 @@
+.portada {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: var(--radio-l);
+}
+
+@media (min-width: 840px) {
+  .ancha {
+    aspect-ratio: 21 / 8;
+  }
+}
+
+.soloArriba {
+  border-radius: var(--radio-l) var(--radio-l) 0 0;
+}
+
+.marcaAgua {
+  position: absolute;
+  right: -18px;
+  bottom: -22px;
+  width: 120px;
+  height: 120px;
+  opacity: 0.18;
+}
+
+.categoria {
+  position: absolute;
+  left: var(--esp-m);
+  bottom: var(--esp-m);
+  font: var(--label-large);
+}
+
+.bloqueFecha {
+  position: absolute;
+  top: var(--esp-m);
+  left: var(--esp-m);
+}
+
+.fecha {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: var(--radio-s);
+  background: var(--superficie);
+}
+
+.fechaDia {
+  color: var(--on-surface);
+  font: var(--title-large);
+}
+
+.fechaMes {
+  color: var(--secondary);
+  font: var(--label-medium);
+}

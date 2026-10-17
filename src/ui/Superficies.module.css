@@ -1,0 +1,196 @@
+.tarjeta {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: var(--esp-l);
+  border-radius: var(--radio-l);
+  background: var(--superficie);
+  color: var(--on-surface);
+  box-shadow: var(--sombra-tarjeta);
+  text-align: left;
+}
+
+button.tarjeta,
+a.tarjeta {
+  border: 0;
+  cursor: pointer;
+  text-decoration: none;
+  font: inherit;
+  transition:
+    box-shadow 0.15s,
+    transform 0.15s;
+}
+
+button.tarjeta:hover,
+a.tarjeta:hover {
+  box-shadow: 0 4px 16px rgb(27 36 50 / 12%);
+}
+
+.sinRelleno {
+  padding: 0;
+  overflow: hidden;
+}
+
+/* Aviso en línea */
+.aviso {
+  display: flex;
+  gap: var(--esp-m);
+  align-items: flex-start;
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: var(--radio-m);
+}
+
+.aviso svg {
+  flex: none;
+  margin-top: 1px;
+  font-size: 20px;
+}
+
+.avisoCuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  font: var(--body-medium);
+}
+
+.avisoTitulo {
+  font: var(--title-small);
+}
+
+.avisoAccion {
+  align-self: flex-start;
+  margin-top: 4px;
+  padding: 6px 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: var(--label-large);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.neutro {
+  background: var(--info-contenedor);
+  color: var(--sobre-info);
+}
+
+.marca {
+  background: var(--primary-container);
+  color: var(--on-primary-container);
+}
+
+.destacado {
+  background: var(--tertiary-container);
+  color: var(--on-tertiary-container);
+}
+
+.exito {
+  background: var(--exito-contenedor);
+  color: var(--sobre-exito);
+}
+
+.avisoTono {
+  background: var(--aviso-contenedor);
+  color: var(--sobre-aviso);
+}
+
+.error {
+  background: var(--error-contenedor);
+  color: var(--sobre-error);
+}
+
+/* Zona de demostración: se ve distinta a propósito */
+.demo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-s);
+  width: 100%;
+  padding: 14px;
+  border: 1px dashed var(--tertiary);
+  border-radius: var(--radio-m);
+  background: var(--superficie-baja);
+}
+
+.demoTitulo {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-s);
+  color: var(--coral-texto);
+  font: var(--label-large);
+}
+
+/* Fila de dato */
+.dato {
+  display: flex;
+  gap: var(--esp-m);
+  align-items: flex-start;
+}
+
+.dato > svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--primary);
+  font-size: 20px;
+}
+
+.datoValor {
+  font: var(--body-large);
+  color: var(--on-surface);
+  overflow-wrap: anywhere;
+}
+
+.datoApoyo {
+  font: var(--body-medium);
+  color: var(--on-surface-variant);
+}
+
+/* Fila de importe */
+.importe {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--esp-m);
+  padding: 3px 0;
+  font: var(--body-medium);
+  color: var(--on-surface-variant);
+}
+
+.importe span:last-child {
+  color: var(--on-surface);
+  white-space: nowrap;
+}
+
+.importeDestacado {
+  padding: 6px 0;
+  font: var(--title-medium);
+  color: var(--on-surface);
+}
+
+.importeDestacado span:last-child {
+  font: var(--title-large);
+}
+
+.divisor {
+  height: 1px;
+  margin: var(--esp-s) 0 var(--esp-xs);
+  border: 0;
+  background: var(--outline-variant);
+}
+
+/* Etiqueta (chip de solo lectura) */
+.etiqueta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-xs);
+  padding: 5px 10px;
+  border-radius: 999px;
+  font: var(--label-medium);
+  white-space: nowrap;
+}
+
+.etiqueta svg {
+  font-size: 14px;
+}

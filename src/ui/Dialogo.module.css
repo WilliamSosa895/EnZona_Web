@@ -1,0 +1,76 @@
+.fondo {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: var(--esp-l);
+  background: rgb(27 36 50 / 45%);
+  animation: aparecer 0.15s ease-out;
+}
+
+.dialogo {
+  display: flex;
+  flex-direction: column;
+  width: min(100%, 520px);
+  max-height: calc(100dvh - 32px);
+  border-radius: var(--radio-xl);
+  background: var(--superficie);
+  box-shadow: var(--sombra-dialogo);
+  overflow: hidden;
+}
+
+.titulo {
+  padding: var(--esp-xl) var(--esp-xl) var(--esp-l);
+  color: var(--on-surface);
+  font: var(--headline-small);
+}
+
+.cuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-m);
+  padding: 0 var(--esp-xl);
+  overflow-y: auto;
+  color: var(--on-surface-variant);
+  font: var(--body-medium);
+}
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--esp-s);
+  padding: var(--esp-xl);
+}
+
+/* Los botones rellenos dentro de un diálogo miden lo que su texto (como el Button de Material) */
+.acciones > * {
+  width: auto;
+  min-height: 44px;
+  padding-inline: var(--esp-l);
+}
+
+@keyframes aparecer {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .fondo {
+    align-items: end;
+    padding: 0;
+  }
+
+  .dialogo {
+    width: 100%;
+    border-radius: var(--radio-xl) var(--radio-xl) 0 0;
+    max-height: 92dvh;
+  }
+
+  .acciones {
+    padding-bottom: max(var(--esp-xl), env(safe-area-inset-bottom));
+  }
+}
