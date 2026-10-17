@@ -6,7 +6,7 @@
 import { http, HttpResponse, type DefaultBodyType } from 'msw';
 import { env } from '@/config/env';
 import type { Asiento, Boleto, Evento, EventoSolicitud, Orden, PoliticaCancelacion, Rol } from '@/api/tipos';
-import { crearBase, type BaseSimulada, type EventoSimulado, type UsuarioSimulado } from './datos';
+import { crearBase, type BaseSimulada, type EventoSimulado, type OrdenSimulada, type UsuarioSimulado } from './datos';
 
 /** Código fijo de verificación en la API simulada (la real lo envía por correo o lo escribe en la bitácora). */
 export const CODIGO_DEMO = '123456';
@@ -110,6 +110,75 @@ function firmar(codigo: string): string {
 }
 
 const siguiente = () => ++db.secuencia;
+
+/** Emite N boletos (uno por asiento si el evento es numerado) y ocupa los asientos. */
+function emitirBoletos(
+  e: EventoSimulado,
+  tipo: EventoSimulado['tipos'][number],
+  ordenId: number,
+  usuarioId: number,
+  asientos: number[],
+  cantidad: number,
+): Boleto[] {
+  const emitidos: Boleto[] = Array.from({ length: cantidad }, (_, i) => {
+    const asiento = e.requiereAsiento ? e.asientos.find((a) => a.id === asientos[i]) : undefined;
+    if (asiento) asiento.estado = 'OCUPADO';
+    const id = siguiente();
+    const codigo = `EZ-${String(id).padStart(4, '0')}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+    const firma = firmar(codigo);
+    return {
+      id,
+      ordenId,
+      eventoId: e.id,
+      tipoBoletoId: tipo.id,
+      asientoId: asiento?.id ?? null,
+      codigo,
+      firma,
+      contenidoQr: `${codigo}.${firma}`,
+      estado: 'VALIDO',
+      fechaEmision: ahoraIso(),
+      fechaUso: null,
+      eventoNombre: e.nombre,
+      fechaHoraInicio: e.fechaHoraInicio,
+      lugar: e.lugar,
+      tipoNombre: tipo.nombre,
+      asientoEtiqueta: asiento?.etiqueta ?? null,
+    };
+  });
+  emitidos.forEach((b) => db.boletos.push({ ...b, usuarioId }));
+  return emitidos;
+}
+
+/** Segundos que tarda la pasarela simulada en confirmar un pago pendiente (el webhook de la API real). */
+const ESPERA_WEBHOOK_MS = 6_000;
+
+/**
+ * Imita el webhook y la tarea programada de la API: `tok_pendiente` se aprueba a los pocos segundos y
+ * `tok_error` (pasarela sin respuesta) se cancela al vencer la orden, liberando el cupo y los asientos.
+ */
+function resolverPendiente(o: OrdenSimulada): void {
+  if (o.estadoOrden !== 'PENDIENTE' || !o.pendiente) return;
+  const e = db.eventos.find((x) => x.id === o.eventoId);
+  const tipo = e?.tipos.find((t) => t.id === o.pendiente?.tipoId);
+  if (!e || !tipo) return;
+  const { cantidad, asientosIds, token, creadaEn } = o.pendiente;
+  if (token === 'tok_pendiente' && Date.now() - creadaEn >= ESPERA_WEBHOOK_MS) {
+    o.boletos = emitirBoletos(e, tipo, o.ordenId, o.usuarioId, asientosIds, cantidad);
+    Object.assign(o, { estadoOrden: 'PAGADA', estadoPago: 'APROBADO', expiraEn: null, mensaje: null });
+    delete o.pendiente;
+  } else if (o.expiraEn && Date.now() >= new Date(o.expiraEn).getTime()) {
+    tipo.disponibles += cantidad;
+    for (const id of asientosIds) {
+      const a = e.asientos.find((x) => x.id === id);
+      if (a?.estado === 'RESERVADO') a.estado = 'DISPONIBLE';
+    }
+    Object.assign(o, {
+      estadoOrden: 'CANCELADA',
+      mensaje: 'La pasarela no confirmó el pago a tiempo. No se realizó ningún cargo.',
+    });
+    delete o.pendiente;
+  }
+}
 
 function cuerpoInvalido(errores: { campo: string; mensaje: string }[]) {
   return problema(400, 'VALIDACION', 'Los datos enviados no son válidos', errores);
@@ -652,7 +721,7 @@ const boletaje = [
       return problema(400, 'SOLICITUD_INVALIDA', 'La cabecera Idempotency-Key es obligatoria');
     const previa = db.ordenes.find((o) => o.clave === clave && o.usuarioId === u.id);
     if (previa) {
-      const { usuarioId: _u, clave: _c, ...orden } = previa;
+      const { usuarioId: _u, clave: _c, pendiente: _p, ...orden } = previa;
       return HttpResponse.json(orden, { status: 200 });
     }
     const d = (await request.json()) as {
@@ -716,47 +785,38 @@ const boletaje = [
       db.ordenes.push({ ...orden, usuarioId: u.id, clave });
       return HttpResponse.json(orden, { status: 201 });
     }
-    if (e.esDePago && d.tokenPago === 'tok_pendiente') {
+    if (e.esDePago && (d.tokenPago === 'tok_pendiente' || d.tokenPago === 'tok_error')) {
+      // Igual que la API: el cupo y los asientos quedan apartados mientras la pasarela confirma.
       tipo.disponibles -= d.cantidad;
+      for (const id of asientos) {
+        const a = e.asientos.find((x) => x.id === id);
+        if (a) a.estado = 'RESERVADO';
+      }
       const orden: Orden = {
         ...base,
         estadoOrden: 'PENDIENTE',
         estadoPago: null,
-        referenciaPago: `sbx_${ordenId}`,
-        expiraEn: new Date(Date.now() + 600_000).toISOString(),
+        referenciaPago: d.tokenPago === 'tok_error' ? null : `sbx_${ordenId}`,
+        expiraEn: new Date(Date.now() + 15 * 60_000).toISOString(),
         mensaje: 'Esperando la confirmación de la pasarela.',
         boletos: [],
       };
-      db.ordenes.push({ ...orden, usuarioId: u.id, clave });
+      db.ordenes.push({
+        ...orden,
+        usuarioId: u.id,
+        clave,
+        pendiente: {
+          tipoId: tipo.id,
+          cantidad: d.cantidad,
+          asientosIds: asientos,
+          token: d.tokenPago,
+          creadaEn: Date.now(),
+        },
+      });
       return HttpResponse.json(orden, { status: 201 });
     }
     tipo.disponibles -= d.cantidad;
-    const emitidos: Boleto[] = Array.from({ length: d.cantidad }, (_, i) => {
-      const asiento = e.requiereAsiento ? e.asientos.find((a) => a.id === asientos[i]) : undefined;
-      if (asiento) asiento.estado = 'OCUPADO';
-      const id = siguiente();
-      const codigo = `EZ-${String(id).padStart(4, '0')}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
-      const firma = firmar(codigo);
-      return {
-        id,
-        ordenId,
-        eventoId: e.id,
-        tipoBoletoId: tipo.id,
-        asientoId: asiento?.id ?? null,
-        codigo,
-        firma,
-        contenidoQr: `${codigo}.${firma}`,
-        estado: 'VALIDO',
-        fechaEmision: ahoraIso(),
-        fechaUso: null,
-        eventoNombre: e.nombre,
-        fechaHoraInicio: e.fechaHoraInicio,
-        lugar: e.lugar,
-        tipoNombre: tipo.nombre,
-        asientoEtiqueta: asiento?.etiqueta ?? null,
-      };
-    });
-    emitidos.forEach((b) => db.boletos.push({ ...b, usuarioId: u.id }));
+    const emitidos = emitirBoletos(e, tipo, ordenId, u.id, asientos, d.cantidad);
     const orden: Orden = {
       ...base,
       estadoOrden: 'PAGADA',
@@ -773,7 +833,8 @@ const boletaje = [
     if (!u) return noAutenticado();
     const o = db.ordenes.find((x) => x.ordenId === Number(params.id));
     if (!o || (o.usuarioId !== u.id && !tiene(u, 'ADMIN'))) return noEncontrado();
-    const { usuarioId: _u, clave: _c, ...orden } = o;
+    resolverPendiente(o);
+    const { usuarioId: _u, clave: _c, pendiente: _p, ...orden } = o;
     return HttpResponse.json({
       ...orden,
       boletos: db.boletos.filter((b) => b.ordenId === o.ordenId).map(({ usuarioId: _x, ...b }) => b),

@@ -36,11 +36,19 @@ export interface EventoSimulado extends Omit<Evento, 'tiposBoleto' | 'distanciaK
   validadores: number[];
 }
 
+/** Orden con los datos internos que la API real guarda en la tabla `orden` y en la pasarela. */
+export interface OrdenSimulada extends Orden {
+  usuarioId: number;
+  clave: string;
+  /** Solo en órdenes pendientes: lo necesario para emitir o liberar cuando la pasarela responda. */
+  pendiente?: { tipoId: number; cantidad: number; asientosIds: number[]; token: string; creadaEn: number };
+}
+
 export interface BaseSimulada {
   usuarios: UsuarioSimulado[];
   categorias: Categoria[];
   eventos: EventoSimulado[];
-  ordenes: (Orden & { usuarioId: number; clave: string })[];
+  ordenes: OrdenSimulada[];
   boletos: (Boleto & { usuarioId: number })[];
   validaciones: (ValidacionRespuesta & { eventoId: number })[];
   sesiones: Map<string, number>;
