@@ -51,6 +51,8 @@ export default defineConfig({
       reporter: ['text', 'html', 'lcov'],
       include: ['src/**/*.{ts,tsx}'],
       exclude: ['src/**/*.test.{ts,tsx}', 'src/test/**', 'src/mocks/**', 'src/main.tsx', 'src/**/*.d.ts'],
+      // Umbral mínimo: la CI falla si la cobertura baja de aquí.
+      thresholds: { lines: 80, statements: 80, branches: 70, functions: 65 },
     },
   },
 });
