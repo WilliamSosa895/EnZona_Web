@@ -57,6 +57,19 @@ describe('organizador (RF-08, RF-13, RF-14, RF-17)', () => {
     expect(screen.getByText('La suma de boletos (80) supera el aforo (60).')).toBeInTheDocument();
   });
 
+  it('CP-15: no permite reducir el aforo por debajo de lo vendido', async () => {
+    sesionComo('organizador@uv.mx');
+    const { usuario } = renderizarApp('/organizador/eventos/4/editar');
+    const aforo = await screen.findByLabelText('Aforo (lugares totales)');
+    await usuario.clear(aforo);
+    await usuario.type(aforo, '5');
+    await usuario.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+    expect(
+      screen.getByText('Ya hay 14 lugares vendidos o reservados; el aforo no puede ser menor.'),
+    ).toBeInTheDocument();
+    expect(base().eventos.find((e) => e.id === 4)!.aforo).toBe(20);
+  });
+
   it('designa personal de acceso por correo', async () => {
     sesionComo('organizador@uv.mx');
     const { usuario } = renderizarApp('/organizador/eventos/2');
