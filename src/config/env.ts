@@ -20,5 +20,5 @@ export const env = {
    */
   pasarela: 'sandbox' as const,
   /** Versión de la aplicación, tomada de package.json al compilar. */
-  version: '0.1.0',
+  version: __VERSION_APP__,
 } as const;

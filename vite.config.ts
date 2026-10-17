@@ -1,5 +1,5 @@
 /// <reference types="vitest/config" />
-import { rmSync } from 'node:fs';
+import { readFileSync, rmSync } from 'node:fs';
 import { fileURLToPath, URL } from 'node:url';
 import react from '@vitejs/plugin-react';
 import { defineConfig, type Plugin } from 'vite';
@@ -15,9 +15,13 @@ function sinApiSimulada(): Plugin {
   };
 }
 
+const { version } = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as { version: string };
+
 // Configuración de Vite (compilación) y de Vitest (pruebas).
 export default defineConfig({
   plugins: [react(), sinApiSimulada()],
+  // La versión que muestra «Mi cuenta» sale de package.json: una sola fuente al publicar.
+  define: { __VERSION_APP__: JSON.stringify(version) },
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },
