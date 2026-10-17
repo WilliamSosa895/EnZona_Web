@@ -51,3 +51,32 @@ jobs:
         run: npm run build
         env:
           VITE_API_URL: https://api.enzona.mx
+
+  e2e:
+    # Flujos completos en un teléfono y en escritorio sobre el modo demostración (sin API real).
+    needs: calidad
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Instalar Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Pruebas de extremo a extremo
+        run: npm run e2e
+
+      - name: Publicar reporte de Playwright
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright
+          path: playwright-report
