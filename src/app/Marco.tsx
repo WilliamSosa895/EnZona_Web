@@ -12,9 +12,9 @@ import estilos from './Marco.module.css';
  * (como Android); en escritorio, un riel lateral siempre visible.
  */
 export function Marco() {
-  const { usuario } = useSesion();
+  const { usuario, accesoPersonal } = useSesion();
   const { pathname } = useLocation();
-  const destinos = destinosDeRol(usuario?.roles ?? []);
+  const destinos = destinosDeRol(usuario?.roles ?? [], accesoPersonal);
   const enPestana = destinos.some((d) => d.ruta === pathname);
 
   return (

@@ -5,39 +5,45 @@ import estilos from './Validador.module.css';
 interface Props {
   /** Mientras es false la cámara sigue abierta pero no entrega lecturas (hay un resultado en pantalla). */
   activa: boolean;
+  /** Enciende la linterna del dispositivo cuando la cámara la tiene. */
+  linterna: boolean;
   onCodigo: (contenido: string) => void;
   onError: (mensaje: string) => void;
+  /** Avisa si la cámara elegida tiene linterna (para mostrar u ocultar el botón). */
+  onLinternaDisponible: (disponible: boolean) => void;
 }
 
 /**
  * Lector de QR con la cámara trasera (CamaraQr en Android). ZXing se carga bajo demanda para no pesar en el
  * resto de la aplicación. La cámara solo funciona en un contexto seguro (HTTPS o localhost).
  */
-export function CamaraQr({ activa, onCodigo, onError }: Props) {
+export function CamaraQr({ activa, linterna, onCodigo, onError, onLinternaDisponible }: Props) {
   const video = useRef<HTMLVideoElement>(null);
+  const controles = useRef<IScannerControls | null>(null);
   const activaRef = useRef(activa);
   const alCodigo = useRef(onCodigo);
   const alError = useRef(onError);
+  const alLinterna = useRef(onLinternaDisponible);
   activaRef.current = activa;
   alCodigo.current = onCodigo;
   alError.current = onError;
+  alLinterna.current = onLinternaDisponible;
   const [lista, setLista] = useState(false);
 
   useEffect(() => {
-    let controles: IScannerControls | null = null;
     let vigente = true;
     let ultimo = '';
     let ultimoEn = 0;
 
     (async () => {
       if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
-        alError.current('La cámara solo está disponible en una conexión segura (HTTPS). Captura el código a mano.');
+        alError.current('La cámara solo está disponible en una conexión segura (HTTPS). Escribe el código a mano.');
         return;
       }
       try {
         const { BrowserQRCodeReader } = await import('@zxing/browser');
         const lector = new BrowserQRCodeReader(undefined, { delayBetweenScanAttempts: 150 });
-        controles = await lector.decodeFromConstraints(
+        const abiertos = await lector.decodeFromConstraints(
           { video: { facingMode: { ideal: 'environment' } }, audio: false },
           video.current ?? undefined,
           (resultado) => {
@@ -50,25 +56,36 @@ export function CamaraQr({ activa, onCodigo, onError }: Props) {
             alCodigo.current(texto);
           },
         );
-        if (!vigente) controles.stop();
-        else setLista(true);
+        if (!vigente) {
+          abiertos.stop();
+          return;
+        }
+        controles.current = abiertos;
+        alLinterna.current(typeof abiertos.switchTorch === 'function');
+        setLista(true);
       } catch (e) {
         const nombre = (e as Error).name;
         alError.current(
           nombre === 'NotAllowedError'
-            ? 'No diste permiso para usar la cámara. Actívalo en la configuración del navegador o captura el código a mano.'
+            ? 'No diste permiso para usar la cámara. Actívalo en la configuración del navegador o escribe el código a mano.'
             : nombre === 'NotFoundError'
-              ? 'No se encontró una cámara en este dispositivo. Captura el código a mano.'
-              : 'No se pudo abrir la cámara. Captura el código a mano.',
+              ? 'No se encontró una cámara en este dispositivo. Escribe el código a mano.'
+              : 'No se pudo abrir la cámara. Escribe el código a mano.',
         );
       }
     })();
 
     return () => {
       vigente = false;
-      controles?.stop();
+      controles.current?.stop();
+      controles.current = null;
     };
   }, []);
+
+  useEffect(() => {
+    if (!lista) return;
+    controles.current?.switchTorch?.(linterna).catch(() => alLinterna.current(false));
+  }, [linterna, lista]);
 
   return (
     <div className={estilos.camara}>

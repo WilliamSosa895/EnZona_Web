@@ -290,6 +290,50 @@ export interface ValidacionRespuesta {
   fechaUso: string | null;
 }
 
+/** Boleto del manifiesto: lo necesario para validar sin conexión (la clave HMAC nunca sale del servidor). */
+export interface BoletoManifiesto {
+  codigo: string;
+  firma: string;
+  estado: EstadoBoleto;
+  tipoBoleto: string | null;
+  /** null si el evento no tiene asientos numerados. */
+  asiento: string | null;
+}
+
+/** GET /api/eventos/{id}/manifiesto: boletos VALIDO y USADO del evento (RNF-08). */
+export interface Manifiesto {
+  eventoId: number;
+  evento: string;
+  generadoEn: string;
+  total: number;
+  boletos: BoletoManifiesto[];
+}
+
+/** Escaneo hecho sin conexión: el QR leído y la hora del dispositivo. */
+export interface RegistroSinConexion {
+  qr: string;
+  fechaHora: string;
+}
+
+export interface ResultadoSincronizado {
+  qr: string;
+  fechaHora: string;
+  resultado: ResultadoAcceso;
+  motivo: MotivoRechazo | null;
+  /** Otro dispositivo ya había admitido este boleto (prevalece el escaneo más antiguo). */
+  conflicto: boolean;
+  /** Este escaneo ya se había sincronizado antes. */
+  duplicado: boolean;
+}
+
+export interface SincronizacionRespuesta {
+  procesados: number;
+  permitidos: number;
+  rechazados: number;
+  conflictos: number;
+  resultados: ResultadoSincronizado[];
+}
+
 // ---------------------------------------------------------------- administración
 
 export interface UsuarioAdmin {
