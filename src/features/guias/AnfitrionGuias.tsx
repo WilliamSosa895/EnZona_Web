@@ -200,7 +200,7 @@ function Superposicion({ guia, onTerminar }: { guia: GuiaActiva; onTerminar: () 
 
   return (
     // El fondo es un atajo de ratón o táctil; con teclado se usan los botones y las flechas.
-    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions
+    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
     <div
       className={estilos.superposicion}
       role="dialog"
