@@ -437,3 +437,8 @@
   flex-direction: column;
   gap: var(--esp-xs);
 }
+
+.faltantes {
+  color: var(--error);
+  font: var(--body-medium);
+}
