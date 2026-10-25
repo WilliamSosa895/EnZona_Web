@@ -7,7 +7,7 @@ import type { EstadoEvento, EstadoUsuario, Evento, UsuarioAdmin } from '@/api/ti
 import { claves } from '@/app/consultas';
 import { NOMBRE_ROL } from '@/auth/roles';
 import { useSesion } from '@/auth/useSesion';
-import { corto } from '@/lib/fechas';
+import { corto, yaPaso } from '@/lib/fechas';
 import { mensajeDeError } from '@/lib/errores';
 import { useDemora } from '@/lib/useDemora';
 import { DialogoCancelarEvento } from '@/features/organizador/DialogoCancelarEvento';
@@ -277,6 +277,8 @@ function TarjetaEvento({ evento, organizador }: { evento: Evento; organizador: s
   const [cancelando, setCancelando] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
   const cancelable = evento.estado === 'PUBLICADO' || evento.estado === 'BORRADOR';
+  // Un evento que ya comenzó no se cancela: la API lo pasa a REALIZADO al terminar.
+  const yaComenzo = yaPaso(evento.fechaHoraInicio);
   // Red de seguridad humana tras la moderación automática: el administrador retira una portada inapropiada.
   const quitarPortada = useMutation({
     mutationFn: () => eventosApi.quitarImagen(evento.id),
@@ -335,11 +337,16 @@ function TarjetaEvento({ evento, organizador }: { evento: Evento; organizador: s
           {evento.motivoCancelacion ? ` · ${evento.motivoCancelacion}` : ''}
         </p>
       )}
-      {cancelable && (
-        <BotonTexto tono="peligro" onClick={() => setCancelando(true)}>
-          Cancelar evento
-        </BotonTexto>
-      )}
+      {cancelable &&
+        (yaComenzo ? (
+          <p className={estilos.apoyo}>
+            El evento ya comenzó. No se puede cancelar; solo puede quedar como finalizado.
+          </p>
+        ) : (
+          <BotonTexto tono="peligro" onClick={() => setCancelando(true)}>
+            Cancelar evento
+          </BotonTexto>
+        ))}
       {aviso && <Aviso tono="exito" texto={aviso} anunciar />}
     </article>
   );
