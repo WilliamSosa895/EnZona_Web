@@ -51,6 +51,8 @@ export interface BaseSimulada {
   ordenes: OrdenSimulada[];
   boletos: (Boleto & { usuarioId: number })[];
   validaciones: (ValidacionRespuesta & { eventoId: number })[];
+  /** Escaneos sin conexión ya sincronizados («qr|fechaHora»), para marcar los reenvíos como duplicados. */
+  sincronizados?: string[];
   sesiones: Map<string, number>;
   secuencia: number;
 }

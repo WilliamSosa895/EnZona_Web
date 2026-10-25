@@ -947,6 +947,82 @@ const otros = [
     return HttpResponse.json(r);
   }),
 
+  http.get(api('/eventos/:id/manifiesto'), ({ request, params }) => {
+    const u = usuarioDe(request);
+    if (!u) return noAutenticado();
+    const e = db.eventos.find((x) => x.id === Number(params.id));
+    if (!e) return noEncontrado();
+    if (!tiene(u, 'ADMIN') && e.organizadorId !== u.id && !e.validadores.includes(u.id)) return prohibido();
+    const boletos = db.boletos
+      .filter((b) => b.eventoId === e.id && (b.estado === 'VALIDO' || b.estado === 'USADO'))
+      .map((b) => ({
+        codigo: b.codigo,
+        firma: b.firma,
+        estado: b.estado,
+        tipoBoleto: b.tipoNombre,
+        asiento: b.asientoEtiqueta,
+      }));
+    return HttpResponse.json({
+      eventoId: e.id,
+      evento: e.nombre,
+      generadoEn: ahoraIso(),
+      total: boletos.length,
+      boletos,
+    });
+  }),
+
+  http.post(api('/validaciones/sincronizar'), async ({ request }) => {
+    const u = usuarioDe(request);
+    if (!u) return noAutenticado();
+    const { eventoId, registros } = (await request.json()) as {
+      eventoId: number;
+      registros: { qr: string; fechaHora: string }[];
+    };
+    const e = db.eventos.find((x) => x.id === Number(eventoId));
+    if (!e) return noEncontrado();
+    if (!tiene(u, 'ADMIN') && e.organizadorId !== u.id && !e.validadores.includes(u.id)) return prohibido();
+    db.sincronizados ??= [];
+    const resultados = [...registros]
+      .sort((a, b) => a.fechaHora.localeCompare(b.fechaHora))
+      .map(({ qr, fechaHora }) => {
+        const clave = `${qr}|${fechaHora}`;
+        const duplicado = db.sincronizados!.includes(clave);
+        const [codigo, firma] = String(qr).trim().split('.');
+        const b = db.boletos.find((x) => x.codigo === codigo);
+        let motivo: string | null = null;
+        let conflicto = false;
+        if (!b) motivo = 'BOLETO_INEXISTENTE';
+        else if (b.firma !== firma) motivo = 'FIRMA_INVALIDA';
+        else if (b.eventoId !== e.id) motivo = 'OTRO_EVENTO';
+        else if (b.estado === 'CANCELADO') motivo = 'CANCELADO';
+        else if (b.estado === 'USADO') {
+          motivo = 'YA_UTILIZADO';
+          // Otro dispositivo (o la validación en línea) lo admitió antes: el primero gana.
+          conflicto = !duplicado;
+        }
+        if (!motivo && b) {
+          b.estado = 'USADO';
+          b.fechaUso = fechaHora;
+        }
+        if (!duplicado) db.sincronizados!.push(clave);
+        return {
+          qr,
+          fechaHora,
+          resultado: motivo ? ('RECHAZADO' as const) : ('PERMITIDO' as const),
+          motivo,
+          conflicto,
+          duplicado,
+        };
+      });
+    return HttpResponse.json({
+      procesados: resultados.length,
+      permitidos: resultados.filter((r) => r.resultado === 'PERMITIDO').length,
+      rechazados: resultados.filter((r) => r.resultado === 'RECHAZADO').length,
+      conflictos: resultados.filter((r) => r.conflicto).length,
+      resultados,
+    });
+  }),
+
   http.get(api('/admin/usuarios'), ({ request }) => {
     const u = usuarioDe(request);
     if (!u) return noAutenticado();
