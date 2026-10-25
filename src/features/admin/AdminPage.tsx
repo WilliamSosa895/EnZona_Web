@@ -24,36 +24,48 @@ import {
   Pagina,
   Portada,
 } from '@/ui';
+import { ResumenAdmin } from './ResumenAdmin';
 import estilos from './Admin.module.css';
 
 const TAMANO = 20;
 
-type Pestana = 'usuarios' | 'eventos';
+type Pestana = 'resumen' | 'usuarios' | 'eventos';
+
+const PESTANAS: { clave: Pestana; texto: string }[] = [
+  { clave: 'resumen', texto: 'Resumen' },
+  { clave: 'usuarios', texto: 'Usuarios' },
+  { clave: 'eventos', texto: 'Eventos' },
+];
 
 /**
- * Administración de la plataforma (RF-18, AdminScreen en Android): usuarios y eventos. La asignación de roles
- * y el cambio de asientos desde aquí quedaron fuera del alcance de la API (docs/COHERENCIA_APP_ANDROID.md).
+ * Administración de la plataforma (RF-18, AdminScreen en Android): resumen con indicadores y gráficas, usuarios y
+ * eventos. La asignación de roles y el cambio de asientos desde aquí quedaron fuera del alcance de la API
+ * (docs/COHERENCIA_APP_ANDROID.md).
  */
 export default function AdminPage() {
-  const [pestana, setPestana] = useState<Pestana>('usuarios');
+  const [pestana, setPestana] = useState<Pestana>('resumen');
   const id = useId();
-  const pestanas: { clave: Pestana; texto: string }[] = [
-    { clave: 'usuarios', texto: 'Usuarios' },
-    { clave: 'eventos', texto: 'Eventos' },
-  ];
 
-  // Navegación de pestañas con flechas (patrón WAI-ARIA Tabs).
+  // Navegación de pestañas con flechas, Inicio y Fin (patrón WAI-ARIA Tabs).
   function alTeclear(e: KeyboardEvent) {
-    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
-    const siguiente = pestana === 'usuarios' ? 'eventos' : 'usuarios';
+    const actual = PESTANAS.findIndex((p) => p.clave === pestana);
+    const destino = {
+      ArrowRight: (actual + 1) % PESTANAS.length,
+      ArrowLeft: (actual - 1 + PESTANAS.length) % PESTANAS.length,
+      Home: 0,
+      End: PESTANAS.length - 1,
+    }[e.key];
+    if (destino === undefined) return;
+    e.preventDefault();
+    const siguiente = PESTANAS[destino].clave;
     setPestana(siguiente);
     document.getElementById(`${id}-${siguiente}`)?.focus();
   }
 
   return (
-    <Pagina titulo="Administración" subtitulo="Usuarios y eventos de la plataforma">
+    <Pagina titulo="Administración" subtitulo="Resumen, usuarios y eventos de la plataforma">
       <div role="tablist" aria-label="Secciones de administración" className={estilos.pestanas}>
-        {pestanas.map((p) => (
+        {PESTANAS.map((p) => (
           <button
             key={p.clave}
             id={`${id}-${p.clave}`}
@@ -71,7 +83,7 @@ export default function AdminPage() {
         ))}
       </div>
       <div role="tabpanel" id={`${id}-panel-${pestana}`} aria-labelledby={`${id}-${pestana}`} className={estilos.panel}>
-        {pestana === 'usuarios' ? <Usuarios /> : <Eventos />}
+        {pestana === 'resumen' ? <ResumenAdmin /> : pestana === 'usuarios' ? <Usuarios /> : <Eventos />}
       </div>
     </Pagina>
   );
