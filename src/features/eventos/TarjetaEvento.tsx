@@ -1,7 +1,7 @@
-import { MdCalendarMonth, MdLocationOn, MdNearMe } from 'react-icons/md';
+import { MdCalendarMonth, MdLocationOn } from 'react-icons/md';
 import type { Evento } from '@/api/tipos';
 import { corto } from '@/lib/fechas';
-import { etiquetaPrecio, lugares } from '@/lib/formato';
+import { distancia, etiquetaPrecio, lugares } from '@/lib/formato';
 import { Etiqueta, EtiquetaAgotado, Portada, Tarjeta } from '@/ui';
 import estilos from './Eventos.module.css';
 
@@ -25,14 +25,11 @@ export function TarjetaEvento({ evento }: { evento: Evento }) {
         </span>
         <span className={estilos.compacta}>
           <MdLocationOn aria-hidden="true" />
-          <span>{evento.lugar}</span>
-        </span>
-        {evento.distanciaKm !== null && (
-          <span className={estilos.compacta}>
-            <MdNearMe aria-hidden="true" />
-            <span>A {evento.distanciaKm.toLocaleString('es-MX', { maximumFractionDigits: 1 })} km de ti</span>
+          {/* La distancia la calcula el servidor; si el evento no tiene coordenadas no se inventa. */}
+          <span>
+            {evento.distanciaKm !== null ? `${evento.lugar} · a ${distancia(evento.distanciaKm)}` : evento.lugar}
           </span>
-        )}
+        </span>
         <div className={estilos.tarjetaPie}>
           {evento.esDePago ? (
             <span className={estilos.precio}>{etiquetaPrecio(true, evento.precioDesde)}</span>
