@@ -139,8 +139,10 @@ function Detalle({ evento, boletosPropios }: { evento: Evento; boletosPropios: n
             nombre={evento.nombre}
             categoria={evento.categoria}
             fecha={evento.fechaHoraInicio}
+            imagenUrl={evento.imagenUrl}
             mostrarFecha={false}
             ancha
+            prioritaria
           />
           <div>
             <h1 className={estilos.nombreEvento}>{evento.nombre}</h1>

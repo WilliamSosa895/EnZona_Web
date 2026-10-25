@@ -463,6 +463,7 @@ const eventos = [
       estado: d.publicar ? 'PUBLICADO' : 'BORRADOR',
       fechaCancelacion: null,
       motivoCancelacion: null,
+      imagenUrl: null,
       tipos,
       asientos: d.requiereAsiento ? construirAsientos(d) : [],
       validadores: [],
@@ -548,6 +549,37 @@ const eventos = [
     if (e.latitud === null)
       return problema(422, 'REGLA_NEGOCIO', 'Para publicar el evento hacen falta sus coordenadas');
     e.estado = 'PUBLICADO';
+    return HttpResponse.json(aEvento(e, true));
+  }),
+
+  http.post(api('/eventos/:id/imagen'), async ({ request, params }) => {
+    const u = usuarioDe(request);
+    if (!u) return noAutenticado();
+    const e = db.eventos.find((x) => x.id === Number(params.id));
+    if (!e) return noEncontrado();
+    if (e.organizadorId !== u.id && !tiene(u, 'ADMIN')) return prohibido();
+    if (e.estado === 'CANCELADO' || e.estado === 'REALIZADO')
+      return problema(409, 'ESTADO_INVALIDO', `Un evento ${e.estado} no se modifica`);
+    const campo = (await request.formData()).get('imagen');
+    // Comparación por forma y no con instanceof: en las pruebas el Blob puede venir de otro entorno (jsdom).
+    const archivo = typeof campo === 'object' && campo !== null ? (campo as Blob) : null;
+    if (!archivo || archivo.size === 0)
+      return problema(422, 'REGLA_NEGOCIO', 'Adjunta una imagen (campo "imagen")');
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(archivo.type))
+      return problema(422, 'REGLA_NEGOCIO', 'La imagen debe ser JPEG, PNG o WebP');
+    // La API real la guarda en su almacén; la simulada la sirve como vista local del navegador.
+    e.imagenUrl =
+      typeof URL.createObjectURL === 'function' ? URL.createObjectURL(archivo) : `/api/imagenes/${e.id}.jpg`;
+    return HttpResponse.json(aEvento(e, true));
+  }),
+
+  http.delete(api('/eventos/:id/imagen'), ({ request, params }) => {
+    const u = usuarioDe(request);
+    if (!u) return noAutenticado();
+    const e = db.eventos.find((x) => x.id === Number(params.id));
+    if (!e) return noEncontrado();
+    if (e.organizadorId !== u.id && !tiene(u, 'ADMIN')) return prohibido();
+    e.imagenUrl = null;
     return HttpResponse.json(aEvento(e, true));
   }),
 

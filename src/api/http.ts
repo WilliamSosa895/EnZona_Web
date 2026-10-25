@@ -55,6 +55,10 @@ type Consulta = Record<string, string | number | boolean | undefined | null>;
 
 export interface OpcionesPeticion {
   cuerpo?: unknown;
+  /** Cuerpo multipart (subida de archivos). El navegador fija Content-Type con su separador. */
+  formulario?: FormData;
+  /** Tiempo máximo de la petición; por defecto 20 s. */
+  tiempoLimiteMs?: number;
   consulta?: Consulta;
   cabeceras?: Record<string, string>;
   senal?: AbortSignal;
@@ -74,8 +78,8 @@ function construirUrl(ruta: string, consulta?: Consulta): string {
   return url.toString();
 }
 
-function combinarSenales(senal?: AbortSignal): AbortSignal {
-  const limite = AbortSignal.timeout(TIEMPO_LIMITE_MS);
+function combinarSenales(senal?: AbortSignal, tiempoLimiteMs = TIEMPO_LIMITE_MS): AbortSignal {
+  const limite = AbortSignal.timeout(tiempoLimiteMs);
   if (!senal) return limite;
   if ('any' in AbortSignal) return AbortSignal.any([senal, limite]);
   return senal;
@@ -102,8 +106,8 @@ async function ejecutar(metodo: string, ruta: string, opciones: OpcionesPeticion
     respuesta = await fetch(construirUrl(ruta, opciones.consulta), {
       method: metodo,
       headers: cabeceras,
-      body: opciones.cuerpo === undefined ? undefined : JSON.stringify(opciones.cuerpo),
-      signal: combinarSenales(opciones.senal),
+      body: opciones.formulario ?? (opciones.cuerpo === undefined ? undefined : JSON.stringify(opciones.cuerpo)),
+      signal: combinarSenales(opciones.senal, opciones.tiempoLimiteMs),
       credentials: 'omit',
       cache: 'no-store',
     });
