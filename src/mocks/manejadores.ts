@@ -563,8 +563,7 @@ const eventos = [
     const campo = (await request.formData()).get('imagen');
     // Comparación por forma y no con instanceof: en las pruebas el Blob puede venir de otro entorno (jsdom).
     const archivo = typeof campo === 'object' && campo !== null ? (campo as Blob) : null;
-    if (!archivo || archivo.size === 0)
-      return problema(422, 'REGLA_NEGOCIO', 'Adjunta una imagen (campo "imagen")');
+    if (!archivo || archivo.size === 0) return problema(422, 'REGLA_NEGOCIO', 'Adjunta una imagen (campo "imagen")');
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(archivo.type))
       return problema(422, 'REGLA_NEGOCIO', 'La imagen debe ser JPEG, PNG o WebP');
     // La API real la guarda en su almacén; la simulada la sirve como vista local del navegador.

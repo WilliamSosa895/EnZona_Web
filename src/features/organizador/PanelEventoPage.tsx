@@ -22,6 +22,9 @@ import {
   EtiquetaEstadoEvento,
   IndicadorCarga,
 } from '@/ui';
+import { CLAVES_GUIA } from '@/features/guias/almacen';
+import { pasosPanel } from '@/features/guias/pasos';
+import { useGuia } from '@/features/guias/useGuia';
 import { DialogoCancelarEvento } from './DialogoCancelarEvento';
 import { BarraProgreso, Metrica } from './Metricas';
 import estilos from './Organizador.module.css';
@@ -78,6 +81,9 @@ function Panel({ evento, reporte, errorReporte }: { evento: Evento; reporte?: Re
     },
   });
 
+  const vigente = evento.estado !== 'CANCELADO' && evento.estado !== 'REALIZADO';
+  useGuia(CLAVES_GUIA.PANEL_EVENTO, pasosPanel({ editable, cancelable: vigente, conPersonal: vigente }));
+
   const emitidos = reporte?.boletosEmitidos ?? 0;
   const validados = reporte?.accesosValidados ?? 0;
   const ocupados = reporte ? reporte.aforo - reporte.disponibles : 0;
@@ -89,7 +95,11 @@ function Panel({ evento, reporte, errorReporte }: { evento: Evento; reporte?: Re
         volver={() => navegar('/organizador')}
         acciones={
           editable && (
-            <BotonIcono etiqueta="Editar evento" onClick={() => navegar(`/organizador/eventos/${evento.id}/editar`)}>
+            <BotonIcono
+              etiqueta="Editar evento"
+              data-guia="panel_editar"
+              onClick={() => navegar(`/organizador/eventos/${evento.id}/editar`)}
+            >
               <MdEdit />
             </BotonIcono>
           )
@@ -125,7 +135,7 @@ function Panel({ evento, reporte, errorReporte }: { evento: Evento; reporte?: Re
         {aviso && <Aviso texto={aviso} tono="exito" anunciar />}
         {errorReporte && <Aviso texto={mensajeDeError(errorReporte)} tono="error" />}
 
-        <div className={estilos.metricas}>
+        <div className={estilos.metricas} data-guia="panel_metricas">
           <Metrica etiqueta="Asistentes" valor={reporte ? String(emitidos) : '…'} />
           <Metrica etiqueta="Validados" valor={reporte ? String(validados) : '…'} />
           <Metrica etiqueta="Ingresos" valor={reporte ? precio(reporte.ingresos) : '…'} />
@@ -152,7 +162,9 @@ function Panel({ evento, reporte, errorReporte }: { evento: Evento; reporte?: Re
               </p>
             )}
 
-            <h2 className={estilos.subtitulo}>Ventas por tipo de boleto</h2>
+            <h2 className={estilos.subtitulo} data-guia="panel_boletos">
+              Ventas por tipo de boleto
+            </h2>
             {reporte && reporte.porTipo.length > 0 ? (
               <div
                 className={estilos.tablaDesplazable}
@@ -193,9 +205,7 @@ function Panel({ evento, reporte, errorReporte }: { evento: Evento; reporte?: Re
           </section>
 
           <div className={estilos.seccionPanel}>
-            {evento.estado !== 'CANCELADO' && evento.estado !== 'REALIZADO' && (
-              <PersonalDeAcceso eventoId={evento.id} />
-            )}
+            {vigente && <PersonalDeAcceso eventoId={evento.id} />}
 
             {evento.estado === 'CANCELADO' && (
               <Aviso
@@ -236,8 +246,12 @@ function Panel({ evento, reporte, errorReporte }: { evento: Evento; reporte?: Re
               </EnlaceSecundario>
             )}
 
-            {evento.estado !== 'CANCELADO' && evento.estado !== 'REALIZADO' && (
-              <BotonSecundario className={estilos.botonPeligro} onClick={() => setCancelando(true)}>
+            {vigente && (
+              <BotonSecundario
+                className={estilos.botonPeligro}
+                data-guia="panel_cancelar"
+                onClick={() => setCancelando(true)}
+              >
                 Cancelar evento
               </BotonSecundario>
             )}
@@ -289,7 +303,7 @@ function PersonalDeAcceso({ eventoId }: { eventoId: number }) {
   }
 
   return (
-    <section className={estilos.personal} aria-labelledby="titulo-personal">
+    <section className={estilos.personal} aria-labelledby="titulo-personal" data-guia="panel_personal">
       <h2 id="titulo-personal" className={estilos.tituloPersonal}>
         <MdHowToReg aria-hidden="true" />
         Personal de acceso

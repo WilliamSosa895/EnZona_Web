@@ -24,6 +24,9 @@ import {
   IndicadorCarga,
   Selector,
 } from '@/ui';
+import { CLAVES_GUIA } from '@/features/guias/almacen';
+import { PASOS_ASIENTOS } from '@/features/guias/pasos';
+import { useGuia } from '@/features/guias/useGuia';
 import { Leyenda, PlanoAsientos } from './PlanoAsientos';
 import { compararNumero, etiquetaCorta, etiquetaLarga, leerIds, leerPedido, rutaPago, ZOOM } from './pedido';
 import estilos from './Compra.module.css';
@@ -82,6 +85,7 @@ function Plano({ evento, asientos, tipoId, cantidad }: PlanoProps) {
   const [avisoLimite, setAvisoLimite] = useState<string | null>(null);
   const [porNumero, setPorNumero] = useState(false);
   const [confirmando, setConfirmando] = useState(false);
+  useGuia(CLAVES_GUIA.ASIENTOS, PASOS_ASIENTOS);
 
   // La selección vive en la URL (?sel=): sobrevive a recargar y a volver desde el pago.
   const seleccionados = useMemo(() => leerIds(parametros.get('sel')).slice(0, cantidad), [parametros, cantidad]);
@@ -162,16 +166,19 @@ function Plano({ evento, asientos, tipoId, cantidad }: PlanoProps) {
               </p>
             </div>
             <div className={estilos.herramientas}>
-              <Leyenda />
+              <div data-guia="asientos_leyenda">
+                <Leyenda />
+              </div>
               <div className={estilos.botonesPlano}>
                 <BotonSecundario
                   icono={<MdEventSeat />}
+                  data-guia="asientos_por_numero"
                   onClick={() => setPorNumero(true)}
                   disabled={elegidos.length >= cantidad}
                 >
                   Elegir por número
                 </BotonSecundario>
-                <div className={estilos.zoom}>
+                <div className={estilos.zoom} data-guia="asientos_zoom">
                   <BotonIcono
                     etiqueta="Reducir el plano"
                     tonal
@@ -194,7 +201,9 @@ function Plano({ evento, asientos, tipoId, cantidad }: PlanoProps) {
                 </div>
               </div>
             </div>
-            <PlanoAsientos asientos={asientos} seleccionados={seleccionados} tamano={tamano} onAlternar={alternar} />
+            <div data-guia="asientos_plano">
+              <PlanoAsientos asientos={asientos} seleccionados={seleccionados} tamano={tamano} onAlternar={alternar} />
+            </div>
             <p className={estilos.notaPie}>
               Elegir asientos no los aparta todavía: se reservan al confirmar. Si alguien toma uno antes, te avisaremos
               para que elijas otro.
@@ -247,6 +256,7 @@ function Plano({ evento, asientos, tipoId, cantidad }: PlanoProps) {
               resumen={resumen}
               habilitado={listos}
               onClick={continuar}
+              guia="asientos_continuar"
               aviso={avisoLimite ? <Aviso texto={avisoLimite} tono="aviso" anunciar /> : undefined}
             />
           </>

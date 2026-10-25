@@ -31,6 +31,9 @@ import {
   Logo,
   Pagina,
 } from '@/ui';
+import { CLAVES_GUIA } from '@/features/guias/almacen';
+import { PASOS_INICIO } from '@/features/guias/pasos';
+import { useGuia } from '@/features/guias/useGuia';
 import { DialogoZona } from './DialogoZona';
 import { TarjetaEvento } from './TarjetaEvento';
 import estilos from './Eventos.module.css';
@@ -158,6 +161,9 @@ export default function InicioPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- solo al montar la pantalla
   }, []);
 
+  // Guía de la primera vez: se abre cuando el catálogo ya está en pantalla.
+  useGuia(CLAVES_GUIA.INICIO, PASOS_INICIO, eventos.isSuccess);
+
   const resumen =
     totalMostrado === 1
       ? '1 evento'
@@ -185,6 +191,7 @@ export default function InicioPage() {
           className={estilos.zona}
           onClick={() => setEligiendoZona(true)}
           aria-label={`Zona: ${zona}. Cambiar zona`}
+          data-guia="inicio_zona"
         >
           {usandoUbicacion ? <MdMyLocation aria-hidden="true" /> : <MdPlace aria-hidden="true" />}
           {zona}
@@ -193,7 +200,7 @@ export default function InicioPage() {
       </header>
       {avisoUbicacion && <Aviso texto={avisoUbicacion} tono="aviso" anunciar />}
 
-      <div className={estilos.busqueda} role="search">
+      <div className={estilos.busqueda} role="search" data-guia="inicio_busqueda">
         <div style={{ position: 'relative' }}>
           <Campo
             etiqueta="Buscar evento o lugar"
@@ -214,7 +221,7 @@ export default function InicioPage() {
         </div>
       </div>
 
-      <div className={estilos.filtros} role="group" aria-label="Filtros">
+      <div className={estilos.filtros} role="group" aria-label="Filtros" data-guia="inicio_filtros">
         <ChipFiltro
           texto="Gratis"
           activo={filtros.precio === 'GRATIS'}
@@ -276,8 +283,8 @@ export default function InicioPage() {
 
       {eventos.isSuccess && visibles.length > 0 && (
         <ul className={estilos.rejilla} style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-          {visibles.map((evento) => (
-            <li key={evento.id}>
+          {visibles.map((evento, indice) => (
+            <li key={evento.id} data-guia={indice === 0 ? 'inicio_evento' : undefined}>
               <TarjetaEvento evento={evento} />
             </li>
           ))}

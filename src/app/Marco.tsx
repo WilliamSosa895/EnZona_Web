@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useSesion } from '@/auth/useSesion';
+import { AnfitrionGuias } from '@/features/guias/AnfitrionGuias';
 import { IndicadorCarga } from '@/ui';
 import pin from '@/assets/enzona_pin.png';
 import { destinosDeRol } from './navegacion';
@@ -17,32 +18,35 @@ export function Marco() {
   const enPestana = destinos.some((d) => d.ruta === pathname);
 
   return (
-    <div className={[estilos.marco, estilos.conNavegacion, enPestana ? estilos.conBarra : ''].join(' ')}>
-      <a href="#contenido" className="saltar-contenido">
-        Saltar al contenido
-      </a>
-      <nav className={estilos.barra} aria-label="Navegación principal">
-        <img src={pin} alt="" className={estilos.logoRiel} width={56} height={56} />
-        {destinos.map(({ ruta, etiqueta, icono: Icono }) => (
-          <NavLink
-            key={ruta}
-            to={ruta}
-            end={ruta === '/'}
-            className={({ isActive }) => [estilos.destino, isActive ? estilos.activo : ''].join(' ')}
-          >
-            <span className={estilos.indicador} aria-hidden="true">
-              <Icono />
-            </span>
-            {etiqueta}
-          </NavLink>
-        ))}
-      </nav>
-      <main id="contenido" className={estilos.contenido} tabIndex={-1}>
-        <Suspense fallback={<IndicadorCarga texto="Cargando…" />}>
-          <Outlet />
-        </Suspense>
-      </main>
-    </div>
+    <AnfitrionGuias>
+      <div className={[estilos.marco, estilos.conNavegacion, enPestana ? estilos.conBarra : ''].join(' ')}>
+        <a href="#contenido" className="saltar-contenido">
+          Saltar al contenido
+        </a>
+        <nav className={estilos.barra} aria-label="Navegación principal">
+          <img src={pin} alt="" className={estilos.logoRiel} width={56} height={56} />
+          {destinos.map(({ ruta, etiqueta, icono: Icono }) => (
+            <NavLink
+              key={ruta}
+              to={ruta}
+              end={ruta === '/'}
+              data-guia={`nav_${ruta}`}
+              className={({ isActive }) => [estilos.destino, isActive ? estilos.activo : ''].join(' ')}
+            >
+              <span className={estilos.indicador} aria-hidden="true">
+                <Icono />
+              </span>
+              {etiqueta}
+            </NavLink>
+          ))}
+        </nav>
+        <main id="contenido" className={estilos.contenido} tabIndex={-1}>
+          <Suspense fallback={<IndicadorCarga texto="Cargando…" />}>
+            <Outlet />
+          </Suspense>
+        </main>
+      </div>
+    </AnfitrionGuias>
   );
 }
 

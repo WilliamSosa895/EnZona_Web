@@ -27,6 +27,9 @@ import {
 import { dentroDelArea } from '@/features/mapa/geo';
 import { vendidosDe } from './calculos';
 import { SeccionPortada, usePortadaFormulario } from './SeccionPortada';
+import { CLAVES_GUIA } from '@/features/guias/almacen';
+import { PASOS_NUEVO_EVENTO } from '@/features/guias/pasos';
+import { useGuia } from '@/features/guias/useGuia';
 import estilos from './Organizador.module.css';
 
 const MapaSelector = lazy(() => import('@/features/mapa/Mapas').then((m) => ({ default: m.MapaSelector })));
@@ -152,6 +155,8 @@ function Formulario({ titulo, categorias, existente, asientos }: FormularioProps
   const ubicacion = useLocation();
   const consultas = useQueryClient();
   const portada = usePortadaFormulario(existente?.imagenUrl ?? null);
+  // Guía de la primera vez, solo al crear (al editar ya se conoce el formulario).
+  useGuia(CLAVES_GUIA.NUEVO_EVENTO, PASOS_NUEVO_EVENTO, !existente);
   const [errorPortadaInicial] = useState(() => (ubicacion.state as EstadoRuta | null)?.errorPortada ?? null);
   const vendidos = existente ? vendidosDe(existente) : 0;
   const publicado = existente?.estado === 'PUBLICADO';
@@ -415,7 +420,7 @@ function Formulario({ titulo, categorias, existente, asientos }: FormularioProps
           guia="evento_portada"
         />
 
-        <Tarjeta>
+        <Tarjeta data-guia="evento_fecha">
           <h2 className={estilos.tituloTarjeta}>Fecha y hora</h2>
           <p className={estilos.apoyo}>Hora del centro de México (zona del evento).</p>
           <div className={estilos.dosCampos}>
@@ -444,7 +449,7 @@ function Formulario({ titulo, categorias, existente, asientos }: FormularioProps
           )}
         </Tarjeta>
 
-        <Tarjeta>
+        <Tarjeta data-guia="evento_ubicacion">
           <h2 className={estilos.tituloTarjeta}>Ubicación</h2>
           <Campo
             etiqueta="Lugar (nombre del recinto)"
@@ -506,7 +511,7 @@ function Formulario({ titulo, categorias, existente, asientos }: FormularioProps
           </div>
         </fieldset>
 
-        <Tarjeta>
+        <Tarjeta data-guia="evento_pago">
           <Interruptor
             icono={<MdPayments />}
             texto="Evento de pago"
@@ -570,7 +575,7 @@ function Formulario({ titulo, categorias, existente, asientos }: FormularioProps
           )}
         </Tarjeta>
 
-        <Tarjeta>
+        <Tarjeta data-guia="evento_asientos">
           <Interruptor
             icono={<MdEventSeat />}
             texto="¿Este evento requiere asientos?"
@@ -666,7 +671,7 @@ function Formulario({ titulo, categorias, existente, asientos }: FormularioProps
           />
         )}
 
-        <div className={estilos.accionesFormulario}>
+        <div className={estilos.accionesFormulario} data-guia="evento_acciones">
           {existente ? (
             <Boton
               type="submit"

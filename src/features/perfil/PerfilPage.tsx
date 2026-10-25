@@ -12,6 +12,7 @@ import {
   MdPrivacyTip,
   MdPublic,
   MdShield,
+  MdLightbulb,
 } from 'react-icons/md';
 import { eventosApi } from '@/api/eventos';
 import type { Rol } from '@/api/tipos';
@@ -24,6 +25,7 @@ import { yaPaso } from '@/lib/fechas';
 import { mensajeDeError } from '@/lib/errores';
 import { guardarPreferencias, leerPreferencias } from '@/lib/preferencias';
 import { obtenerUbicacion } from '@/lib/ubicacion';
+import { reiniciarGuias } from '@/features/guias/almacen';
 import {
   Aviso,
   Avatar,
@@ -49,6 +51,7 @@ export default function PerfilPage() {
   const [dialogo, setDialogo] = useState<'convertirse' | 'dejar' | null>(null);
   const [preferencias, setPreferencias] = useState(leerPreferencias);
   const [avisoUbicacion, setAvisoUbicacion] = useState<string | null>(null);
+  const [avisoGuias, setAvisoGuias] = useState(false);
 
   if (!usuario) return null;
   const roles = perfil.data?.roles ?? usuario.roles;
@@ -172,7 +175,21 @@ export default function PerfilPage() {
           descripcion="Contraseña y verificación de la cuenta"
           a="/perfil/seguridad"
         />
+        <Separador />
+        <FilaAjuste
+          icono={<MdLightbulb />}
+          texto="Volver a ver las guías"
+          descripcion="Los recorridos de la primera vez se muestran de nuevo en cada pantalla"
+          mostrarFlecha={false}
+          onClick={() => {
+            reiniciarGuias();
+            setAvisoGuias(true);
+          }}
+        />
       </GrupoAjustes>
+      {avisoGuias && (
+        <Aviso texto="Listo: las guías volverán a aparecer al entrar a cada pantalla." tono="exito" anunciar />
+      )}
 
       <TituloSeccion>Ayuda</TituloSeccion>
       <GrupoAjustes>

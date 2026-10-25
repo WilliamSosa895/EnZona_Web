@@ -1,11 +1,7 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+import { entrar, sinGuias } from './apoyo';
 
-async function entrar(page: Page, correo: string, personal = false) {
-  await page.goto(personal ? '/acceso/personal' : '/acceso');
-  await page.getByLabel('Correo o CURP', { exact: true }).fill(correo);
-  await page.getByLabel('Contraseña', { exact: true }).fill('enzona123');
-  await page.getByRole('button', { name: 'Iniciar sesión' }).click();
-}
+test.beforeEach(({ page }) => sinGuias(page));
 
 test('asistente: compra dos asientos y ve sus boletos QR', async ({ page }) => {
   await entrar(page, 'asistente@uv.mx');
