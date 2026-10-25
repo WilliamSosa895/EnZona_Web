@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
+import { entrar, sinGuias } from './apoyo';
 
 /** Revisión automática WCAG 2.1 A y AA de las pantallas principales de cada rol. */
 async function revisar(page: Page, ruta: string) {
@@ -14,13 +15,7 @@ async function revisar(page: Page, ruta: string) {
   ).toEqual([]);
 }
 
-async function entrar(page: Page, correo: string, personal = false) {
-  await page.goto(personal ? '/acceso/personal' : '/acceso');
-  await page.getByLabel('Correo o CURP', { exact: true }).fill(correo);
-  await page.getByLabel('Contraseña', { exact: true }).fill('enzona123');
-  await page.getByRole('button', { name: 'Iniciar sesión' }).click();
-  await page.waitForURL((url) => !url.pathname.startsWith('/acceso'));
-}
+test.beforeEach(({ page }) => sinGuias(page));
 
 test('accesibilidad: pantallas sin sesión', async ({ page }) => {
   for (const ruta of ['/acceso', '/acceso/personal', '/registro']) await revisar(page, ruta);
