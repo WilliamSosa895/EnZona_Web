@@ -431,3 +431,9 @@
   color: var(--primary);
   font: var(--body-medium);
 }
+
+.boletosEmitidos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-xs);
+}
