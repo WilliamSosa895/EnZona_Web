@@ -6,7 +6,7 @@ La interfaz replica la app Android (mismos colores, componentes, textos y flujos
 
 |            |                                                                                                                      |
 | ---------- | -------------------------------------------------------------------------------------------------------------------- |
-| Versión    | 0.1.0                                                                                                                |
+| Versión    | 0.1.0 (en `develop`: alineación con Android v6, ver [cambios](CHANGELOG.md))                                         |
 | Stack      | React 18 · TypeScript 5 (estricto) · Vite 6 · React Router 7 · TanStack Query 5                                      |
 | Pruebas    | Vitest + Testing Library + MSW (unitarias e integración) · Playwright + axe-core (extremo a extremo y accesibilidad) |
 | Calidad    | ESLint 9 (TypeScript, hooks, accesibilidad) · Prettier · cobertura mínima en la CI                                   |
@@ -14,14 +14,14 @@ La interfaz replica la app Android (mismos colores, componentes, textos y flujos
 
 ## Qué hace
 
-| Rol           | Funciones                                                                                                                                                                             | Requisitos                          |
-| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
-| Visitante     | Registro con CURP y aviso de privacidad, verificación con código, inicio de sesión con correo o CURP                                                                                  | RF-01, RF-02, RF-03                 |
-| Asistente     | Eventos de su zona o cercanos, búsqueda y filtros, detalle con mapa, confirmación de eventos gratuitos, compra de hasta 10 boletos con elección de asientos, pago, Mis boletos con QR | RF-05 a RF-07, RF-09 a RF-12, RF-19 |
-| Organizador   | Mis eventos con métricas, alta y edición (fecha, ubicación en el mapa, tipos de boleto, secciones de asientos), publicación, reportes, personal de acceso y cancelación               | RF-08, RF-13, RF-14, RF-17          |
-| Validador     | Escáner QR con la cámara o captura manual, resultado con motivo de rechazo y bitácora reciente                                                                                        | RF-15                               |
-| Administrador | Usuarios (buscar, bloquear y desbloquear) y eventos (cancelación administrativa con motivo)                                                                                           | RF-18                               |
-| Todos         | Mi cuenta: datos, contraseña, ajustes de ubicación, ayuda, privacidad y legal                                                                                                         | RF-04                               |
+| Rol           | Funciones                                                                                                                                                                                                     | Requisitos                          |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
+| Visitante     | Registro con CURP y aviso de privacidad, verificación con código, inicio de sesión con correo o CURP                                                                                                          | RF-01, RF-02, RF-03                 |
+| Asistente     | Eventos de su zona o «Cerca de mí», búsqueda y filtros, detalle con portada y mapa, confirmación de eventos gratuitos, compra de hasta 10 boletos con elección de asientos, pago, Mis boletos con QR          | RF-05 a RF-07, RF-09 a RF-12, RF-19 |
+| Organizador   | Mis eventos con métricas, alta y edición (portada encuadrada, fecha, ubicación en el mapa, tipos de boleto, secciones de asientos), publicación, reportes, boletos emitidos, personal de acceso y cancelación | RF-08, RF-13, RF-14, RF-17          |
+| Validador     | Pantalla para la puerta: cámara con linterna, resultado a toda la pantalla, contadores, captura del código y validación sin conexión con sincronización                                                       | RF-15, RNF-08                       |
+| Administrador | Resumen con indicadores y gráficas, usuarios (buscar, bloquear y desbloquear) y eventos (quitar portada, cancelación administrativa con motivo)                                                               | RF-18                               |
+| Todos         | Mi cuenta: datos, contraseña, ajustes de ubicación, guías de la primera vez, ayuda, privacidad y legal                                                                                                        | RF-04                               |
 
 ## Empezar
 
@@ -48,7 +48,9 @@ Abre <http://localhost:5173>. La API se simula en el navegador con [Mock Service
 | `validador@uv.mx`   | `enzona123` | Acceso normal o «Acceso del personal» |
 | `admin@uv.mx`       | `enzona123` | «Acceso del personal»                 |
 
-El código de verificación de las cuentas nuevas es `123456`. En la pantalla de pago, la «Zona de demostración» elige qué responde la pasarela: aprobado, rechazado, pendiente o sin respuesta.
+El código de verificación de las cuentas nuevas es `123456`. En la pantalla de pago, la «Zona de demostración» elige qué responde la pasarela: aprobado, rechazado, pendiente o sin respuesta. Las guías de la primera vez aparecen al entrar a cada pantalla; se repiten desde Mi cuenta → «Volver a ver las guías».
+
+Las portadas necesitan la API con la rama `feature/imagenes-evento` (migración V6). Con una API anterior la web funciona igual, solo sin portadas.
 
 ### Con la API real
 
@@ -86,8 +88,9 @@ src/
 │   ├── boletos/       Mis boletos y boleto QR
 │   ├── perfil/        Mi cuenta, datos y seguridad
 │   ├── organizador/   Mis eventos, formulario, panel y cancelación
-│   ├── validador/     escáner de QR
-│   ├── admin/         usuarios y eventos
+│   ├── validador/     validación en la puerta, en línea y sin conexión
+│   ├── admin/         resumen, usuarios y eventos
+│   ├── guias/         guías interactivas de la primera vez
 │   ├── mapa/          mapas de OpenStreetMap (carga diferida)
 │   └── informacion/   ayuda, privacidad y legal
 ├── lib/          Utilidades puras: fechas en la zona del evento, formato, validaciones, errores
