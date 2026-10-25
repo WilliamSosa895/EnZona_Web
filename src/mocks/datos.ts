@@ -124,6 +124,7 @@ export function crearBase(): BaseSimulada {
     estado: 'PUBLICADO',
     fechaCancelacion: null,
     motivoCancelacion: null,
+    imagenUrl: null,
     tipos: [],
     asientos: [],
     validadores: [3],

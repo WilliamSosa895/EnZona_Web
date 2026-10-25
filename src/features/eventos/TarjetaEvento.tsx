@@ -10,7 +10,13 @@ export function TarjetaEvento({ evento }: { evento: Evento }) {
   const agotado = evento.disponibles <= 0;
   return (
     <Tarjeta sinRelleno a={`/eventos/${evento.id}`} className={estilos.tarjeta}>
-      <Portada nombre={evento.nombre} categoria={evento.categoria} fecha={evento.fechaHoraInicio} soloArriba />
+      <Portada
+        nombre={evento.nombre}
+        categoria={evento.categoria}
+        fecha={evento.fechaHoraInicio}
+        imagenUrl={evento.imagenUrl}
+        soloArriba
+      />
       <div className={estilos.tarjetaCuerpo}>
         <h2 className={estilos.tarjetaNombre}>{evento.nombre}</h2>
         <span className={estilos.compacta}>

@@ -418,3 +418,16 @@
     max-width: 640px;
   }
 }
+
+/* ---------------------------------------------------------------- portada */
+.accionesPortada {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-s);
+}
+
+.avisoPortada {
+  color: var(--primary);
+  font: var(--body-medium);
+}
