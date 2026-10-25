@@ -1,42 +1,11 @@
-import { useCallback, useRef, useState, type ChangeEvent } from 'react';
+import { useRef, useState, type ChangeEvent } from 'react';
 import { MdImage, MdRotateRight } from 'react-icons/md';
-import { eventosApi } from '@/api/eventos';
-import type { Evento } from '@/api/tipos';
 import { mensajeDeError } from '@/lib/errores';
-import { cargarImagen, ENCUADRE_INICIAL, girar, recortar, TIPOS_PORTADA, type Encuadre } from '@/lib/portada';
+import { cargarImagen, ENCUADRE_INICIAL, girar, TIPOS_PORTADA } from '@/lib/portada';
 import { Aviso, BotonSecundario, BotonTexto, Portada, Tarjeta } from '@/ui';
 import { EditorPortada } from './EditorPortada';
+import type { usePortadaFormulario } from './usePortadaFormulario';
 import estilos from './Organizador.module.css';
-
-/** Estado de la portada en el formulario: se elige y encuadra aquí y se sube después de guardar el evento. */
-export interface EstadoPortada {
-  /** Imagen elegida (ya enderezada y reducida); null si no se eligió una nueva. */
-  imagen: HTMLCanvasElement | null;
-  encuadre: Encuadre;
-  /** La persona pidió quitar la portada que el evento ya tenía. */
-  quitar: boolean;
-}
-
-/** Hook del formulario: el estado de la portada y la operación que la aplica al evento ya guardado. */
-export function usePortadaFormulario(urlActual: string | null) {
-  const [estado, setEstado] = useState<EstadoPortada>({ imagen: null, encuadre: ENCUADRE_INICIAL, quitar: false });
-  const [error, setError] = useState<string | null>(null);
-
-  /**
-   * Sube la portada recortada o la quita, una vez que el evento existe en el servidor. Devuelve el evento
-   * actualizado, o null si no había nada que cambiar.
-   */
-  const aplicar = useCallback(
-    async (eventoId: number): Promise<Evento | null> => {
-      if (estado.imagen) return eventosApi.subirImagen(eventoId, await recortar(estado.imagen, estado.encuadre));
-      if (estado.quitar && urlActual) return eventosApi.quitarImagen(eventoId);
-      return null;
-    },
-    [estado, urlActual],
-  );
-
-  return { estado, setEstado, error, setError, aplicar, urlActual };
-}
 
 type Props = ReturnType<typeof usePortadaFormulario> & {
   nombre: string;

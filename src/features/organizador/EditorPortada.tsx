@@ -33,6 +33,7 @@ export function EditorPortada({ imagen, encuadre, onEncuadre, deshabilitado = fa
     if (!elemento) return;
     const medir = () => setAnchoMarco(elemento.clientWidth);
     medir();
+    if (typeof ResizeObserver === 'undefined') return;
     const observador = new ResizeObserver(medir);
     observador.observe(elemento);
     return () => observador.disconnect();

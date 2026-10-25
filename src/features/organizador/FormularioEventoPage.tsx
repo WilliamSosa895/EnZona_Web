@@ -27,7 +27,8 @@ import {
 } from '@/ui';
 import { dentroDelArea } from '@/features/mapa/geo';
 import { vendidosDe } from './calculos';
-import { SeccionPortada, usePortadaFormulario } from './SeccionPortada';
+import { SeccionPortada } from './SeccionPortada';
+import { usePortadaFormulario } from './usePortadaFormulario';
 import { CLAVES_GUIA } from '@/features/guias/almacen';
 import { PASOS_NUEVO_EVENTO } from '@/features/guias/pasos';
 import { useGuia } from '@/features/guias/useGuia';
