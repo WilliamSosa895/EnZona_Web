@@ -42,4 +42,16 @@ describe('administración (RF-18)', () => {
     await waitFor(() => expect(base().eventos.find((e) => e.id === 5)!.estado).toBe('CANCELADO'));
     expect(base().eventos.find((e) => e.id === 5)!.motivoCancelacion).toBe('Permiso municipal revocado');
   });
+
+  it('quita una portada inapropiada (red de seguridad de la moderación)', async () => {
+    const evento = base().eventos.find((e) => e.id === 5)!;
+    evento.imagenUrl = 'https://res.cloudinary.com/demo/image/upload/eventos/5/portada.jpg';
+    sesionComo('admin@uv.mx', true);
+    const { usuario } = renderizarApp('/admin');
+    await usuario.click(await screen.findByRole('tab', { name: 'Eventos' }));
+    const tarjeta = await screen.findByRole('article', { name: evento.nombre });
+    await usuario.click(within(tarjeta).getByRole('button', { name: 'Quitar portada' }));
+    await waitFor(() => expect(base().eventos.find((e) => e.id === 5)!.imagenUrl).toBeNull());
+    expect(await within(tarjeta).findByText(/Se quitó la portada/)).toBeInTheDocument();
+  });
 });

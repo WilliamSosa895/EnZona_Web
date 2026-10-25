@@ -2,6 +2,7 @@ import { useId, useMemo, useState, type KeyboardEvent } from 'react';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { MdSearch } from 'react-icons/md';
 import { administracionApi } from '@/api/administracion';
+import { eventosApi } from '@/api/eventos';
 import type { EstadoEvento, EstadoUsuario, Evento, UsuarioAdmin } from '@/api/tipos';
 import { claves } from '@/app/consultas';
 import { NOMBRE_ROL } from '@/auth/roles';
@@ -21,6 +22,7 @@ import {
   EtiquetaEstadoEvento,
   IndicadorCarga,
   Pagina,
+  Portada,
 } from '@/ui';
 import estilos from './Admin.module.css';
 
@@ -263,6 +265,16 @@ function TarjetaEvento({ evento, organizador }: { evento: Evento; organizador: s
   const [cancelando, setCancelando] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
   const cancelable = evento.estado === 'PUBLICADO' || evento.estado === 'BORRADOR';
+  // Red de seguridad humana tras la moderación automática: el administrador retira una portada inapropiada.
+  const quitarPortada = useMutation({
+    mutationFn: () => eventosApi.quitarImagen(evento.id),
+    onSuccess: (e) => {
+      consultas.setQueryData(claves.evento(e.id), e);
+      setAviso('Se quitó la portada. El evento muestra ahora el panel de su categoría.');
+      void consultas.invalidateQueries({ queryKey: ['admin', 'eventos'] });
+      void consultas.invalidateQueries({ queryKey: ['eventos'] });
+    },
+  });
 
   return (
     <article className={estilos.tarjeta} aria-label={evento.nombre}>
@@ -290,6 +302,21 @@ function TarjetaEvento({ evento, organizador }: { evento: Evento; organizador: s
         </div>
         <EtiquetaEstadoEvento estado={evento.estado} />
       </div>
+      {evento.imagenUrl && (
+        <div className={estilos.portada}>
+          <Portada
+            nombre={evento.nombre}
+            categoria={evento.categoria}
+            fecha={evento.fechaHoraInicio}
+            imagenUrl={evento.imagenUrl}
+            mostrarFecha={false}
+          />
+          <BotonTexto tono="peligro" disabled={quitarPortada.isPending} onClick={() => quitarPortada.mutate()}>
+            {quitarPortada.isPending ? 'Quitando portada…' : 'Quitar portada'}
+          </BotonTexto>
+          {quitarPortada.isError && <Aviso tono="error" texto={mensajeDeError(quitarPortada.error)} anunciar />}
+        </div>
+      )}
       {evento.estado === 'CANCELADO' && (
         <p className={estilos.cancelado}>
           Cancelado{evento.fechaCancelacion ? ` el ${corto(evento.fechaCancelacion)}` : ''}
