@@ -1,5 +1,5 @@
 import { lazy, Suspense, useMemo, useState, type FormEvent } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { MdAdd, MdDeleteOutline, MdEventBusy, MdEventSeat, MdPayments } from 'react-icons/md';
 import { eventosApi } from '@/api/eventos';
@@ -26,6 +26,7 @@ import {
 } from '@/ui';
 import { dentroDelArea } from '@/features/mapa/geo';
 import { vendidosDe } from './calculos';
+import { SeccionPortada, usePortadaFormulario } from './SeccionPortada';
 import estilos from './Organizador.module.css';
 
 const MapaSelector = lazy(() => import('@/features/mapa/Mapas').then((m) => ({ default: m.MapaSelector })));
@@ -141,9 +142,17 @@ function seccionesDe(asientos: Asiento[]): SeccionForm[] {
   }));
 }
 
+/** Estado de navegación con el que se vuelve al formulario si el evento se guardó pero su portada no. */
+interface EstadoRuta {
+  errorPortada?: string;
+}
+
 function Formulario({ titulo, categorias, existente, asientos }: FormularioProps) {
   const navegar = useNavigate();
+  const ubicacion = useLocation();
   const consultas = useQueryClient();
+  const portada = usePortadaFormulario(existente?.imagenUrl ?? null);
+  const [errorPortadaInicial] = useState(() => (ubicacion.state as EstadoRuta | null)?.errorPortada ?? null);
   const vendidos = existente ? vendidosDe(existente) : 0;
   const publicado = existente?.estado === 'PUBLICADO';
   // La modalidad (de pago o con asiento) no cambia una vez publicado o con ventas.
@@ -261,16 +270,35 @@ function Formulario({ titulo, categorias, existente, asientos }: FormularioProps
   const ver = (clave: string) => (intentado ? (errores[clave] ?? null) : null);
 
   // ---------------------------------------------------------------- envío
+  // La portada se sube después de crear o guardar el evento (la API la asocia a un evento existente). Si falla,
+  // los datos del evento ya quedaron guardados: se avisa y se puede elegir otra imagen sin perder nada.
   const guardar = useMutation({
-    mutationFn: (datos: EventoSolicitud) =>
-      existente ? eventosApi.modificar(existente.id, datos) : eventosApi.crear(datos),
-    onSuccess: (e) => {
+    mutationFn: async (datos: EventoSolicitud) => {
+      const evento = existente ? await eventosApi.modificar(existente.id, datos) : await eventosApi.crear(datos);
+      try {
+        return { evento: (await portada.aplicar(evento.id)) ?? evento, errorPortada: null };
+      } catch (causa) {
+        return { evento, errorPortada: mensajeDeError(causa) };
+      }
+    },
+    onSuccess: ({ evento: e, errorPortada }) => {
       consultas.setQueryData(claves.evento(e.id), e);
       void consultas.invalidateQueries({ queryKey: claves.eventosOrganizador });
       void consultas.invalidateQueries({ queryKey: claves.asientos(e.id) });
       void consultas.invalidateQueries({ queryKey: claves.reporte(e.id) });
       void consultas.invalidateQueries({ queryKey: ['eventos'] });
-      navegar(`/organizador/eventos/${e.id}`, { replace: true });
+      void consultas.invalidateQueries({ queryKey: ['admin', 'eventos'] });
+      if (!errorPortada) {
+        navegar(`/organizador/eventos/${e.id}`, { replace: true });
+        return;
+      }
+      const mensaje = `${existente ? 'Los cambios se guardaron' : 'El evento se guardó'}, pero la portada no: ${errorPortada}`;
+      if (existente) portada.setError(mensaje);
+      else
+        navegar(`/organizador/eventos/${e.id}/editar`, {
+          replace: true,
+          state: { errorPortada: mensaje } satisfies EstadoRuta,
+        });
     },
   });
   const errorServidor = guardar.error instanceof ApiError ? guardar.error : null;
@@ -372,6 +400,19 @@ function Formulario({ titulo, categorias, existente, asientos }: FormularioProps
           lineas={3}
           maxLength={5000}
           error={ver('descripcion')}
+        />
+
+        {errorPortadaInicial && !portada.error && !portada.estado.imagen && (
+          <Aviso tono="error" texto={errorPortadaInicial} anunciar />
+        )}
+        <SeccionPortada
+          {...portada}
+          nombre={nombre}
+          categoria={categorias.find((c) => c.id === categoriaId)?.nombre ?? null}
+          fecha={inicioIso ?? new Date().toISOString()}
+          verbo={existente ? 'guardar' : 'crear'}
+          deshabilitado={guardar.isPending}
+          guia="evento_portada"
         />
 
         <Tarjeta>

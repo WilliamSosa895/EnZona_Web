@@ -31,9 +31,11 @@ const MENSAJES: Record<string, string> = {
   DEMASIADOS_INTENTOS: 'Demasiados intentos. Espera unos minutos e intenta de nuevo.',
   ERROR_INTERNO: 'Ocurrió un error inesperado. Intenta de nuevo en unos momentos.',
   SERVICIO_EXTERNO_NO_DISPONIBLE: 'Un servicio externo no respondió. Intenta más tarde.',
+  IMAGEN_NO_PERMITIDA: 'La imagen no cumple las normas de la comunidad. Elige otra.',
 };
 
-const CON_DETALLE = new Set(['REGLA_NEGOCIO', 'POLITICA_MODIFICACION', 'ROL_EN_USO']);
+// La moderación de portadas explica en `detail` por qué rechazó la imagen (desnudez, violencia…).
+const CON_DETALLE = new Set(['REGLA_NEGOCIO', 'POLITICA_MODIFICACION', 'ROL_EN_USO', 'IMAGEN_NO_PERMITIDA']);
 
 /** Mensaje legible para cualquier error (de la API o inesperado). */
 export function mensajeDeError(error: unknown): string {
