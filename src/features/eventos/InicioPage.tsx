@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
-import { MdArrowDropDown, MdClose, MdMyLocation, MdPlace, MdSearch, MdSearchOff } from 'react-icons/md';
+import { MdArrowDropDown, MdClose, MdNearMe, MdPlace, MdSearch, MdSearchOff } from 'react-icons/md';
 import { eventosApi } from '@/api/eventos';
 import { claves } from '@/app/consultas';
 import { mensajeDeError } from '@/lib/errores';
@@ -16,7 +16,7 @@ import {
   type FiltrosInicio,
 } from '@/lib/filtros';
 import { CIUDAD_POR_DEFECTO, guardarPreferencias, leerPreferencias } from '@/lib/preferencias';
-import { obtenerUbicacion, type Coordenadas } from '@/lib/ubicacion';
+import { ErrorUbicacion, obtenerUbicacion, type Coordenadas } from '@/lib/ubicacion';
 import { useDemora } from '@/lib/useDemora';
 import {
   Aviso,
@@ -118,7 +118,7 @@ export default function InicioPage() {
   const visibles = filtros.lugar ? cargados.filter((e) => e.lugar === filtros.lugar) : cargados;
   const totalMostrado = filtros.lugar ? visibles.length : total;
   const usandoUbicacion = coordenadas !== null;
-  const zona = usandoUbicacion ? 'Cerca de mí' : preferencias.ciudad;
+  const zona = preferencias.ciudad;
 
   function elegirCiudad(ciudad: string) {
     const nuevas = { ciudad: ciudad || CIUDAD_POR_DEFECTO, usarUbicacion: false };
@@ -129,19 +129,36 @@ export default function InicioPage() {
     cambiar({ ...filtros, lugar: null });
   }
 
-  async function usarUbicacion() {
-    setBuscandoUbicacion(true);
+  /**
+   * RF-19 / RNF-11: «Cerca de mí» pide la ubicación solo al tocarlo. Con consentimiento la lista llega del
+   * servidor ordenada por distancia (CP-17); sin él, se filtra por la ciudad elegida (CP-18). Tocarlo otra vez
+   * retira el consentimiento y no se conserva la ubicación.
+   */
+  async function alternarCercaDeMi() {
     setAvisoUbicacion(null);
+    if (usandoUbicacion) {
+      setCoordenadas(null);
+      const nuevas = { ...preferencias, usarUbicacion: false };
+      setPreferencias(nuevas);
+      guardarPreferencias(nuevas);
+      return;
+    }
+    setBuscandoUbicacion(true);
     try {
       setCoordenadas(await obtenerUbicacion());
       const nuevas = { ...preferencias, usarUbicacion: true };
       setPreferencias(nuevas);
       guardarPreferencias(nuevas);
-      setEligiendoZona(false);
       cambiar({ ...filtros, lugar: null });
     } catch (e) {
-      setAvisoUbicacion((e as Error).message);
-      setEligiendoZona(false);
+      const nuevas = { ...preferencias, usarUbicacion: false };
+      setPreferencias(nuevas);
+      guardarPreferencias(nuevas);
+      setAvisoUbicacion(
+        e instanceof ErrorUbicacion && e.permisoNegado
+          ? `Sin permiso de ubicación: se muestran los eventos de ${preferencias.ciudad}. Puedes cambiar de zona arriba.`
+          : `No se pudo obtener tu ubicación. Se muestran los eventos de ${preferencias.ciudad}.`,
+      );
     } finally {
       setBuscandoUbicacion(false);
     }
@@ -165,21 +182,18 @@ export default function InicioPage() {
   useGuia(CLAVES_GUIA.INICIO, PASOS_INICIO, eventos.isSuccess);
 
   const resumen =
-    totalMostrado === 1
+    (totalMostrado === 1
       ? '1 evento'
       : hayFiltros(filtros)
         ? `${totalMostrado} eventos encontrados`
-        : `${totalMostrado} eventos publicados`;
+        : `${totalMostrado} eventos publicados`) + (usandoUbicacion ? ' · del más cercano al más lejano' : '');
 
   return (
     <Pagina>
       {eligiendoZona && (
         <DialogoZona
           zonaActual={preferencias.ciudad}
-          usandoUbicacion={usandoUbicacion}
-          buscandoUbicacion={buscandoUbicacion}
           onElegir={elegirCiudad}
-          onUsarUbicacion={usarUbicacion}
           onCerrar={() => setEligiendoZona(false)}
         />
       )}
@@ -193,7 +207,7 @@ export default function InicioPage() {
           aria-label={`Zona: ${zona}. Cambiar zona`}
           data-guia="inicio_zona"
         >
-          {usandoUbicacion ? <MdMyLocation aria-hidden="true" /> : <MdPlace aria-hidden="true" />}
+          <MdPlace aria-hidden="true" />
           {zona}
           <MdArrowDropDown aria-hidden="true" size={24} />
         </button>
@@ -222,6 +236,13 @@ export default function InicioPage() {
       </div>
 
       <div className={estilos.filtros} role="group" aria-label="Filtros" data-guia="inicio_filtros">
+        <ChipFiltro
+          texto={buscandoUbicacion ? 'Ubicando…' : 'Cerca de mí'}
+          activo={usandoUbicacion}
+          deshabilitado={buscandoUbicacion}
+          iconoFinal={<MdNearMe />}
+          onClick={() => void alternarCercaDeMi()}
+        />
         <ChipFiltro
           texto="Gratis"
           activo={filtros.precio === 'GRATIS'}
@@ -304,7 +325,13 @@ export default function InicioPage() {
       {eventos.isSuccess && visibles.length === 0 && (
         <EstadoVacio
           icono={<MdSearchOff size={56} />}
-          titulo={hayFiltros(filtros) ? 'Nada coincide con tu búsqueda' : `No hay eventos publicados en ${zona}`}
+          titulo={
+            hayFiltros(filtros)
+              ? 'Nada coincide con tu búsqueda'
+              : usandoUbicacion
+                ? 'No hay eventos publicados cerca de ti'
+                : `No hay eventos publicados en ${zona}`
+          }
           texto={
             hayFiltros(filtros)
               ? 'Prueba con otra palabra o quita algún filtro.'

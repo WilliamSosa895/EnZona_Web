@@ -1,5 +1,5 @@
 import { screen, waitFor, within } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { base } from '@/mocks/manejadores';
 import { renderizarApp, sesionComo } from '@/test/utilidades';
 
@@ -26,6 +26,46 @@ describe('descubrimiento de eventos (RF-05 a RF-07, RF-19)', () => {
     expect(await screen.findByText('Nada coincide con tu búsqueda')).toBeInTheDocument();
     await usuario.click(screen.getByRole('button', { name: 'Limpiar búsqueda y filtros' }));
     expect(await screen.findByText('Noche de jazz en el Foro')).toBeInTheDocument();
+  });
+
+  describe('«Cerca de mí» (RF-19, CP-17, CP-18)', () => {
+    afterEach(() => vi.unstubAllGlobals());
+
+    const geolocalizacion = (responder: (exito: PositionCallback, error: PositionErrorCallback) => void) =>
+      vi.stubGlobal('navigator', {
+        ...navigator,
+        geolocation: { getCurrentPosition: responder },
+      });
+
+    it('con permiso ordena por distancia y la muestra en cada tarjeta', async () => {
+      geolocalizacion((exito) => exito({ coords: { latitude: 18.85, longitude: -97.1 } } as GeolocationPosition));
+      sesionComo('asistente@uv.mx');
+      const { usuario } = renderizarApp('/');
+      await screen.findByText('Noche de jazz en el Foro');
+      await usuario.click(screen.getByRole('button', { name: 'Cerca de mí' }));
+      expect(await screen.findByText(/del más cercano al más lejano/)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Cerca de mí' })).toHaveAttribute('aria-pressed', 'true');
+      expect(screen.getAllByText(/ · a \d+(\.\d)? (m|km)$/).length).toBeGreaterThan(0);
+
+      await usuario.click(screen.getByRole('button', { name: 'Cerca de mí' }));
+      await waitFor(() => expect(screen.queryByText(/del más cercano/)).not.toBeInTheDocument());
+    });
+
+    it('sin permiso sigue con la ciudad elegida y lo explica', async () => {
+      geolocalizacion((_exito, error) =>
+        error({ code: 1, PERMISSION_DENIED: 1, message: 'denegado' } as GeolocationPositionError),
+      );
+      sesionComo('asistente@uv.mx');
+      const { usuario } = renderizarApp('/');
+      await screen.findByText('Noche de jazz en el Foro');
+      await usuario.click(screen.getByRole('button', { name: 'Cerca de mí' }));
+      expect(
+        await screen.findByText(
+          'Sin permiso de ubicación: se muestran los eventos de Orizaba. Puedes cambiar de zona arriba.',
+        ),
+      ).toBeInTheDocument();
+      expect(screen.getByText('5 eventos publicados')).toBeInTheDocument();
+    });
   });
 
   it('cambia de zona y ofrece volver a Orizaba si no hay eventos', async () => {

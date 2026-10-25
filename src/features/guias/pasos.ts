@@ -160,7 +160,7 @@ export function pasosPanel(opciones: { editable: boolean; cancelable: boolean; c
     {
       objetivo: 'panel_boletos',
       titulo: 'Quién tiene boleto',
-      texto: 'Aquí aparece cada boleto vendido o apartado, con su estado: vigente o usado.',
+      texto: 'Aquí aparece cada boleto vendido o apartado, con su estado: válido o ya usado.',
     },
   ];
   if (opciones.conPersonal)

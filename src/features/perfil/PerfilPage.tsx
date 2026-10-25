@@ -157,7 +157,11 @@ export default function PerfilPage() {
           <Interruptor
             icono={<MdMyLocation />}
             texto="Contenido basado en mi ubicación"
-            detalle="Muestra primero los eventos cercanos a ti"
+            detalle={
+              preferencias.usarUbicacion
+                ? 'Activo: Inicio ordena por cercanía'
+                : 'Se activa aquí o con «Cerca de mí» en Inicio'
+            }
             activo={preferencias.usarUbicacion}
             onCambio={(activo) => void cambiarUbicacion(activo)}
           />

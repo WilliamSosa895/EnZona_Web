@@ -33,6 +33,7 @@ export const claves = {
   reporte: (id: number) => ['reporte', id] as const,
   politica: (id: number) => ['politica', id] as const,
   validadores: (id: number) => ['validadores', id] as const,
+  manifiesto: (id: number) => ['manifiesto', id] as const,
   adminUsuarios: (filtro: unknown) => ['admin', 'usuarios', filtro] as const,
   adminEventos: (filtro: unknown) => ['admin', 'eventos', filtro] as const,
 };

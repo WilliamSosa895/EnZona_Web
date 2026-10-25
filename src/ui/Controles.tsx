@@ -184,19 +184,24 @@ interface ChipFiltroProps {
   texto: string;
   activo: boolean;
   onClick: () => void;
+  /** Ícono al final del texto (p. ej., «Cerca de mí»). */
+  iconoFinal?: ReactNode;
+  deshabilitado?: boolean;
 }
 
 /** Chip de filtro (FilterChip): palomita cuando está activo. */
-export function ChipFiltro({ texto, activo, onClick }: ChipFiltroProps) {
+export function ChipFiltro({ texto, activo, onClick, iconoFinal, deshabilitado }: ChipFiltroProps) {
   return (
     <button
       type="button"
       className={[estilos.chip, activo ? estilos.chipActivo : ''].join(' ')}
       aria-pressed={activo}
+      disabled={deshabilitado}
       onClick={onClick}
     >
       {activo && <MdCheck aria-hidden="true" />}
       {texto}
+      {iconoFinal && <span aria-hidden="true">{iconoFinal}</span>}
     </button>
   );
 }

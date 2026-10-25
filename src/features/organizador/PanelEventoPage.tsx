@@ -3,7 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { MdEdit, MdEventBusy, MdHowToReg, MdOpenInNew, MdPublish } from 'react-icons/md';
 import { eventosApi } from '@/api/eventos';
-import type { Evento, Reporte } from '@/api/tipos';
+import { validacionApi } from '@/api/validacion';
+import type { BoletoManifiesto, Evento, Reporte } from '@/api/tipos';
 import { claves } from '@/app/consultas';
 import { corto, largo, yaPaso } from '@/lib/fechas';
 import { aNumero, importeMxn, precio } from '@/lib/formato';
@@ -19,6 +20,7 @@ import {
   Campo,
   EnlaceSecundario,
   EstadoVacio,
+  EtiquetaEstadoBoleto,
   EtiquetaEstadoEvento,
   IndicadorCarga,
 } from '@/ui';
@@ -162,9 +164,9 @@ function Panel({ evento, reporte, errorReporte }: { evento: Evento; reporte?: Re
               </p>
             )}
 
-            <h2 className={estilos.subtitulo} data-guia="panel_boletos">
-              Ventas por tipo de boleto
-            </h2>
+            {evento.estado !== 'BORRADOR' && <BoletosEmitidos eventoId={evento.id} />}
+
+            <h2 className={estilos.subtitulo}>Ventas por tipo de boleto</h2>
             {reporte && reporte.porTipo.length > 0 ? (
               <div
                 className={estilos.tablaDesplazable}
@@ -262,6 +264,56 @@ function Panel({ evento, reporte, errorReporte }: { evento: Evento; reporte?: Re
   );
 }
 
+const BOLETOS_VISIBLES = 20;
+
+/**
+ * Boletos emitidos del evento (vigentes y usados), como en el panel de Android. La API no tiene una lista de
+ * boletos para el organizador; se usa el manifiesto del evento, que el organizador dueño puede consultar.
+ */
+function BoletosEmitidos({ eventoId }: { eventoId: number }) {
+  const [todos, setTodos] = useState(false);
+  const manifiesto = useQuery({
+    queryKey: claves.manifiesto(eventoId),
+    queryFn: ({ signal }) => validacionApi.manifiesto(eventoId, signal),
+    refetchInterval: 30_000,
+  });
+  const boletos: BoletoManifiesto[] = manifiesto.data?.boletos ?? [];
+  const visibles = todos ? boletos : boletos.slice(0, BOLETOS_VISIBLES);
+  return (
+    <section aria-labelledby="titulo-boletos" className={estilos.boletosEmitidos}>
+      <h2 id="titulo-boletos" className={estilos.subtitulo} data-guia="panel_boletos">
+        Boletos emitidos
+      </h2>
+      {manifiesto.isPending ? (
+        <IndicadorCarga texto="Cargando los boletos…" />
+      ) : manifiesto.isError ? (
+        <Aviso tono="error" texto={mensajeDeError(manifiesto.error)} />
+      ) : boletos.length === 0 ? (
+        <p className={estilos.apoyo}>Todavía no hay boletos emitidos.</p>
+      ) : (
+        <>
+          <ul className={estilos.listaPersonal}>
+            {visibles.map((b) => (
+              <li key={b.codigo}>
+                <div>
+                  <strong>{b.codigo}</strong>
+                  <span>{[b.tipoBoleto ?? 'Entrada general', b.asiento].filter(Boolean).join(' · ')}</span>
+                </div>
+                <EtiquetaEstadoBoleto estado={b.estado} />
+              </li>
+            ))}
+          </ul>
+          {boletos.length > BOLETOS_VISIBLES && (
+            <BotonTexto onClick={() => setTodos((t) => !t)}>
+              {todos ? 'Ver menos' : `Ver los ${boletos.length} boletos`}
+            </BotonTexto>
+          )}
+        </>
+      )}
+    </section>
+  );
+}
+
 /**
  * Personal de acceso: el organizador designa por correo a una cuenta ya registrada; la API le concede el rol
  * VALIDADOR para este evento.
@@ -308,7 +360,9 @@ function PersonalDeAcceso({ eventoId }: { eventoId: number }) {
         <MdHowToReg aria-hidden="true" />
         Personal de acceso
       </h2>
-      <p className={estilos.apoyo}>Quien designes podrá escanear los códigos QR en la puerta desde su propia cuenta.</p>
+      <p className={estilos.apoyo}>
+        Quien designes podrá escanear los códigos QR de este evento en la puerta, desde su propia cuenta.
+      </p>
       <form className={estilos.formularioPersonal} onSubmit={enviar} noValidate>
         <Campo
           etiqueta="Correo de la persona"

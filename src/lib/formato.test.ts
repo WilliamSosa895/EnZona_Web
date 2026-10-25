@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { aNumero, boletos, etiquetaPrecio, importe, importeMxn, lugares, multiplicar, precio } from './formato';
+import {
+  aNumero,
+  boletos,
+  distancia,
+  etiquetaPrecio,
+  importe,
+  importeMxn,
+  lugares,
+  multiplicar,
+  precio,
+} from './formato';
 
 // Intl usa un espacio estrecho en algunas versiones; se normaliza para comparar.
 const n = (t: string) => t.replace(/\s/g, ' ');
@@ -33,5 +43,14 @@ describe('formato de importes (equivalente a Formato.kt)', () => {
     expect(multiplicar('0.10', 3)).toBe(0.3);
     expect(multiplicar('180.00', 2)).toBe(360);
     expect(aNumero('texto')).toBe(0);
+  });
+});
+
+describe('distancia (Formato.distancia en Android)', () => {
+  it('usa metros por debajo de un kilómetro y kilómetros con un decimal después', () => {
+    expect(distancia(0.354)).toBe('350 m');
+    expect(distancia(0.004)).toBe('10 m');
+    expect(distancia(1.44)).toBe('1.4 km');
+    expect(distancia(12)).toBe('12.0 km');
   });
 });

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useMemo, useState, type FormEvent } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { MdAdd, MdDeleteOutline, MdEventBusy, MdEventSeat, MdPayments } from 'react-icons/md';
@@ -8,6 +8,7 @@ import type { Asiento, Categoria, Evento, EventoSolicitud } from '@/api/tipos';
 import { claves } from '@/app/consultas';
 import { aEntradaLocal, desdeEntradaLocal, largo, yaPaso } from '@/lib/fechas';
 import { aNumero } from '@/lib/formato';
+import { direccionAproximada } from '@/lib/geocodificacion';
 import { esCodigo, mensajeDeError } from '@/lib/errores';
 import {
   Aviso,
@@ -192,6 +193,9 @@ function Formulario({ titulo, categorias, existente, asientos }: FormularioProps
     asientos.length ? seccionesDe(asientos) : [{ nombre: 'Luneta', filas: '', porFila: '' }],
   );
   const [aforo, setAforo] = useState(existente ? String(existente.aforo) : '');
+  // Última dirección propuesta por el mapa: distingue el texto automático del que escribió la persona.
+  const [direccionSugerida, setDireccionSugerida] = useState<string | null>(null);
+  const sugeridaAnterior = useRef<string | null>(null);
   const [intentado, setIntentado] = useState(false);
   const [confirmarFecha, setConfirmarFecha] = useState<EventoSolicitud | null>(null);
 
@@ -270,7 +274,46 @@ function Formulario({ titulo, categorias, existente, asientos }: FormularioProps
     sumaTipos,
   ]);
 
+  // Dirección aproximada al fijar el marcador: se propone si el campo está vacío o aún tiene la sugerencia
+  // anterior; si la persona la escribió a mano, se respeta. Se espera a que el marcador quede quieto.
+  useEffect(() => {
+    if (lat === null || lng === null) return;
+    const control = new AbortController();
+    const temporizador = window.setTimeout(() => {
+      direccionAproximada(lat, lng, control.signal)
+        .then((sugerida) => {
+          if (!sugerida) return;
+          setDireccion((actual) =>
+            !actual.trim() || actual === sugeridaAnterior.current ? sugerida.slice(0, 240) : actual,
+          );
+          sugeridaAnterior.current = sugerida.slice(0, 240);
+          setDireccionSugerida(sugerida);
+        })
+        .catch(() => undefined); // sin servicio, la dirección se escribe a mano
+    }, 800);
+    return () => {
+      window.clearTimeout(temporizador);
+      control.abort();
+    };
+  }, [lat, lng]);
+
   const valido = Object.keys(errores).length === 0;
+  // Qué impide crear o guardar: se dice junto a los botones en lugar de dejarlos sin explicación (como Android).
+  const faltantes = useMemo(() => {
+    const lista: string[] = [];
+    const enMinuscula = (t: string) => t.replace(/\.$/, '').replace(/^./, (c) => c.toLocaleLowerCase('es-MX'));
+    if (!nombre.trim()) lista.push('el nombre');
+    if (!lugar.trim()) lista.push('el lugar');
+    if (!inicioIso) lista.push('la fecha y la hora de inicio');
+    else if (errores.inicio) lista.push(enMinuscula(errores.inicio));
+    if (errores.fin) lista.push(enMinuscula(errores.fin));
+    if (requiereAsiento && !planoFijo && Object.keys(errores).some((k) => /^(seccion|filas|porFila|asientos)/.test(k)))
+      lista.push('una sección válida (de 1 a 26 filas y de 1 a 200 asientos por fila)');
+    else if (!requiereAsiento && errores.aforo) lista.push('el aforo');
+    if (esDePago && Object.keys(errores).some((k) => /^(tipo|precio|cantidad|tipos)/.test(k)))
+      lista.push('el nombre, el precio y la cantidad de cada tipo de boleto');
+    return lista;
+  }, [nombre, lugar, inicioIso, errores, requiereAsiento, planoFijo, esDePago]);
   const tieneUbicacion = lat !== null && lng !== null;
   const ver = (clave: string) => (intentado ? (errores[clave] ?? null) : null);
 
@@ -474,6 +517,9 @@ function Formulario({ titulo, categorias, existente, asientos }: FormularioProps
               />
             </Suspense>
           </div>
+          {tieneUbicacion && direccionSugerida && (
+            <p className={estilos.apoyo}>Dirección aproximada: {direccionSugerida}</p>
+          )}
           <p className={tieneUbicacion ? estilos.apoyo : estilos.textoError} aria-live="polite">
             {tieneUbicacion
               ? `Ubicación fijada (${lat?.toFixed(5)}, ${lng?.toFixed(5)}). Toca el mapa o arrastra el marcador para ajustarla.`
@@ -671,6 +717,11 @@ function Formulario({ titulo, categorias, existente, asientos }: FormularioProps
           />
         )}
 
+        {faltantes.length > 0 && (
+          <p className={estilos.faltantes}>
+            Para {existente ? 'guardar' : 'crear'} el evento falta: {faltantes.join(', ')}.
+          </p>
+        )}
         <div className={estilos.accionesFormulario} data-guia="evento_acciones">
           {existente ? (
             <Boton
@@ -687,7 +738,9 @@ function Formulario({ titulo, categorias, existente, asientos }: FormularioProps
                 Crear y publicar
               </Boton>
               {intentado && valido && !tieneUbicacion && (
-                <p className={estilos.textoError}>Publicar está bloqueado hasta fijar la ubicación en el mapa.</p>
+                <p className={estilos.textoError}>
+                  Publicar está bloqueado hasta fijar la ubicación en el mapa. Puedes guardarlo como borrador.
+                </p>
               )}
               <BotonSecundario type="button" disabled={guardar.isPending} onClick={() => enviar(false)}>
                 Guardar como borrador

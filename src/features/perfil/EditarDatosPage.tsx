@@ -82,13 +82,14 @@ function Formulario({ perfil }: { perfil: Perfil }) {
         etiqueta="Teléfono"
         valor={telefono}
         onCambio={(v) => {
-          setTelefono(v);
+          // Solo dígitos (y el + de la lada internacional), sin espacios ni guiones, como en Android.
+          setTelefono(v.replace(/[^\d+]/g, '').slice(0, 16));
           setGuardado(false);
         }}
         type="tel"
         inputMode="tel"
         autoComplete="tel"
-        ayuda="Opcional. Si lo cambias tendrás que verificarlo de nuevo."
+        ayuda="10 dígitos, sin espacios. Opcional; si lo cambias tendrás que verificarlo de nuevo."
         error={(intentado && errorTelefono) || errorServidor?.errorDeCampo('telefono')}
       />
       <Tarjeta>
