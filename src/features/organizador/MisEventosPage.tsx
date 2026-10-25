@@ -9,6 +9,9 @@ import { corto } from '@/lib/fechas';
 import { aNumero, precio } from '@/lib/formato';
 import { mensajeDeError } from '@/lib/errores';
 import { Aviso, EstadoVacio, EtiquetaEstadoEvento, IndicadorCarga, Pagina } from '@/ui';
+import { CLAVES_GUIA } from '@/features/guias/almacen';
+import { pasosOrganizador } from '@/features/guias/pasos';
+import { useGuia } from '@/features/guias/useGuia';
 import { vendidosDe } from './calculos';
 import { BarraProgreso, Metrica } from './Metricas';
 import estilos from './Organizador.module.css';
@@ -35,6 +38,8 @@ export default function MisEventosPage() {
   const ingresos = reportes.reduce((s, r) => s + aNumero(r.data?.ingresos), 0);
   const cargandoIngresos = reportes.some((r) => r.isPending);
 
+  useGuia(CLAVES_GUIA.ORGANIZADOR, pasosOrganizador(lista.length > 0), eventos.isSuccess);
+
   const publicados = lista.filter((e) => e.estado === 'PUBLICADO').length;
   const asistentes = lista.filter((e) => e.estado !== 'CANCELADO').reduce((s, e) => s + vendidosDe(e), 0);
 
@@ -51,7 +56,7 @@ export default function MisEventosPage() {
       )}
       {eventos.isSuccess && (
         <>
-          <div className={estilos.metricas}>
+          <div className={estilos.metricas} data-guia="org_metricas">
             <Metrica etiqueta="Publicados" valor={String(publicados)} />
             <Metrica etiqueta="Asistentes" valor={String(asistentes)} />
             <Metrica etiqueta="Ingresos" valor={cargandoIngresos ? '…' : precio(ingresos)} />
@@ -66,8 +71,8 @@ export default function MisEventosPage() {
             />
           ) : (
             <ul className={estilos.lista}>
-              {lista.map((e) => (
-                <li key={e.id}>
+              {lista.map((e, indice) => (
+                <li key={e.id} data-guia={indice === 0 ? 'org_evento' : undefined}>
                   <TarjetaEventoOrganizador evento={e} />
                 </li>
               ))}
@@ -75,7 +80,7 @@ export default function MisEventosPage() {
           )}
         </>
       )}
-      <Link to="/organizador/eventos/nuevo" className={estilos.fab}>
+      <Link to="/organizador/eventos/nuevo" className={estilos.fab} data-guia="org_nuevo">
         <MdAdd aria-hidden="true" />
         Nuevo evento
       </Link>

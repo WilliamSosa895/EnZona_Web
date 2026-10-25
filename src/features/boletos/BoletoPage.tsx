@@ -30,6 +30,9 @@ import type { Tono } from '@/ui';
 import { CodigoQr } from './CodigoQr';
 import { hermanosDe, partesAsiento } from './agrupar';
 import { useMantenerPantalla } from './useMantenerPantalla';
+import { CLAVES_GUIA } from '@/features/guias/almacen';
+import { PASOS_BOLETO } from '@/features/guias/pasos';
+import { useGuia } from '@/features/guias/useGuia';
 import estilos from './Boletos.module.css';
 
 /**
@@ -71,6 +74,7 @@ function DetalleBoleto({ boleto, hermanos }: { boleto: Boleto; hermanos: Boleto[
   const [correoAbierto, setCorreoAbierto] = useState(false);
   const vigente = boleto.estado === 'VALIDO';
   const pantallaEncendida = useMantenerPantalla(vigente);
+  useGuia(CLAVES_GUIA.BOLETO, PASOS_BOLETO);
   const posicion = hermanos.findIndex((b) => b.id === boleto.id) + 1;
   const total = hermanos.length;
 
@@ -120,7 +124,7 @@ function DetalleBoleto({ boleto, hermanos }: { boleto: Boleto; hermanos: Boleto[
           </nav>
         )}
 
-        <article className={estilos.talon} aria-label={`Boleto de ${boleto.eventoNombre}`}>
+        <article className={estilos.talon} aria-label={`Boleto de ${boleto.eventoNombre}`} data-guia="boleto_qr">
           <div className={estilos.talonDatos}>
             <div className={estilos.talonCabecera}>
               <MdConfirmationNumber className={estilos.talonIcono} aria-hidden="true" />
@@ -156,10 +160,13 @@ function DetalleBoleto({ boleto, hermanos }: { boleto: Boleto; hermanos: Boleto[
           </div>
         </article>
 
-        <TextoEstado boleto={boleto} />
+        <div data-guia="boleto_estado">
+          <TextoEstado boleto={boleto} />
+        </div>
 
         <BotonSecundario
           icono={<MdMailOutline />}
+          data-guia="boleto_correo"
           onClick={() => {
             window.location.href = enlaceCorreo;
             setCorreoAbierto(true);

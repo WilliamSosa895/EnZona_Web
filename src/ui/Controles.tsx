@@ -67,6 +67,8 @@ interface BarraAccionProps {
   cargando?: boolean;
   destacado?: boolean;
   aviso?: ReactNode;
+  /** Clave de la guía interactiva que apunta a la acción principal. */
+  guia?: string;
 }
 
 /** Barra inferior fija con el resumen del precio y la única acción principal (BarraAccion). */
@@ -78,6 +80,7 @@ export function BarraAccion({
   cargando = false,
   destacado = true,
   aviso,
+  guia,
 }: BarraAccionProps) {
   const barra = useRef<HTMLDivElement>(null);
   const [alto, setAlto] = useState<number | null>(null);
@@ -96,7 +99,7 @@ export function BarraAccion({
   return (
     <>
       <div className={estilos.relleno} style={alto ? { height: alto + 16 } : undefined} aria-hidden="true" />
-      <div ref={barra} className={estilos.barraAccion}>
+      <div ref={barra} className={estilos.barraAccion} data-guia={guia}>
         <div className={estilos.barraAccionInterior}>
           {aviso}
           {resumen && (
