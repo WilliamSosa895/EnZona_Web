@@ -29,3 +29,29 @@ test('sin sesión, una ruta protegida lleva a la pantalla de acceso', async ({ p
   await page.goto('/boletos');
   await expect(page).toHaveURL(/\/acceso/);
 });
+
+test('registro sin teléfono, verificación por correo y acceso', async ({ page }) => {
+  await page.goto('/registro');
+  await expect(page.getByLabel(/Teléfono/)).toHaveCount(0);
+  await page.getByLabel('Nombre completo').fill('Luis Pérez');
+  await page.getByLabel('Correo electrónico').fill('luis.e2e@correo.com');
+  await page.getByLabel('CURP').fill('PELL010101HVZRSS05');
+  await page.getByLabel('Contraseña', { exact: true }).fill('Secreta123');
+  await page.getByLabel('Confirmar contraseña').fill('Secreta123');
+  await page.getByRole('checkbox').check();
+  await page.getByRole('button', { name: 'Crear cuenta' }).click();
+  await expect(page.getByRole('heading', { name: 'Verifica tu cuenta' })).toBeVisible();
+  // En el modo demostración la API simulada muestra el código en pantalla.
+  await page.getByLabel('Código de verificación').fill('123456');
+  await page.getByRole('button', { name: 'Verificar' }).click();
+  await expect(page.getByText('Tu cuenta está activa. Ya puedes iniciar sesión.')).toBeVisible();
+});
+
+test('administración: activa sin código una cuenta pendiente', async ({ page }) => {
+  await entrar(page, 'admin@uv.mx', true);
+  await page.getByRole('tab', { name: 'Usuarios' }).click();
+  const tarjeta = page.getByRole('article', { name: 'Paco Pendiente' });
+  await tarjeta.getByRole('button', { name: 'Activar sin código' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Activar cuenta' }).click();
+  await expect(tarjeta.getByText('Activo', { exact: true })).toBeVisible();
+});
