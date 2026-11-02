@@ -10,8 +10,9 @@ export default function AyudaPage() {
       <div className={estilos.contenido}>
         <h2 className={estilos.subtitulo}>Preguntas frecuentes</h2>
         <Apartado titulo="No me llegó el boleto por correo">
-          Tu boleto siempre está disponible en «Mis boletos», aunque el correo no haya llegado. Revisa también la
-          carpeta de correo no deseado.
+          Tu boleto siempre está disponible en «Mis boletos», aunque el correo no haya llegado. Desde ahí puedes volver
+          a enviártelo con tu propia app de correo. El correo llega de EnZona con el asunto «Tus boletos para …» y puede
+          tardar unos minutos; si no lo ves, revisa la carpeta de no deseados.
         </Apartado>
         <Apartado titulo="¿Puedo entrar con una captura de pantalla del QR?">
           Sí. Lo que se valida es el código, no la pantalla donde se muestra. Eso sí: el boleto es de un solo uso, así

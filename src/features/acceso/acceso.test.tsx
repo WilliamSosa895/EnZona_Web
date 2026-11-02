@@ -1,6 +1,8 @@
 import { screen, waitFor } from '@testing-library/react';
+import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 import { base } from '@/mocks/manejadores';
+import { servidor } from '@/mocks/servidor';
 import { renderizarApp } from '@/test/utilidades';
 
 describe('identidad y acceso (RF-01 a RF-03)', () => {
@@ -34,6 +36,52 @@ describe('identidad y acceso (RF-01 a RF-03)', () => {
     await usuario.type(screen.getByLabelText('Contraseña'), 'enzona123');
     await usuario.click(screen.getByRole('button', { name: 'Iniciar sesión' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('no tiene permisos de personal');
+  });
+
+  it('el registro no pide teléfono y avisa que el código llega al correo', async () => {
+    renderizarApp('/registro');
+    expect(await screen.findByLabelText('Correo electrónico')).toBeInTheDocument();
+    expect(screen.queryByLabelText(/Teléfono/)).not.toBeInTheDocument();
+    expect(screen.getByText('Te enviaremos un código de verificación a este correo.')).toBeInTheDocument();
+  });
+
+  it('si la API pide también el código del teléfono, explica cómo activar la cuenta y no lo solicita', async () => {
+    base().usuarios.push({
+      ...base().usuarios[0],
+      id: 900,
+      correo: 'con.telefono@correo.com',
+      curp: 'TELE010101HVZRSS05',
+      telefono: '2721234567',
+      estado: 'PENDIENTE',
+      correoVerificado: false,
+      codigo: '123456',
+    });
+    const { usuario } = renderizarApp('/verificacion?correo=con.telefono%40correo.com');
+    await usuario.type(await screen.findByLabelText('Código de verificación'), '123456');
+    await usuario.click(screen.getByRole('button', { name: 'Verificar' }));
+    expect(await screen.findByText(/por ahora EnZona no envía SMS/)).toBeInTheDocument();
+    expect(screen.getByText('Tu correo quedó verificado, pero falta confirmar el teléfono.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Verificar' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Reenviar código' })).toBeDisabled();
+  });
+
+  it('un fallo al reenviar se muestra aparte y no marca el código como incorrecto', async () => {
+    servidor.use(
+      http.post('*/api/auth/verificacion/reenvio', () =>
+        HttpResponse.json({ codigo: 'DEMASIADOS_INTENTOS', detail: 'Espera' }, { status: 429 }),
+      ),
+    );
+    const { usuario } = renderizarApp('/verificacion?correo=nuevo%40correo.com');
+    await usuario.click(await screen.findByRole('button', { name: 'Reenviar código' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Demasiados intentos');
+    expect(screen.queryByText(/permanece sin activar/)).not.toBeInTheDocument();
+  });
+
+  it('un reenvío correcto avisa que el código anterior sigue vigente e inicia la espera', async () => {
+    const { usuario } = renderizarApp('/verificacion?correo=nuevo%40correo.com');
+    await usuario.click(await screen.findByRole('button', { name: 'Reenviar código' }));
+    expect(await screen.findByText(/el anterior sigue vigente/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Reenviar código \(\d+ s\)/ })).toBeDisabled();
   });
 
   it('CP-03: el registro señala un CURP con formato inválido y no envía nada', async () => {
@@ -73,6 +121,9 @@ describe('identidad y acceso (RF-01 a RF-03)', () => {
 
     const campo = await screen.findByLabelText('Código de verificación');
     expect(enrutador.state.location.search).toContain('correo=luis%40correo.com');
+    // La API acaba de emitir el código: reenviar espera 60 s y se explica dónde buscar el correo.
+    expect(screen.getByRole('button', { name: /Reenviar código \(\d+ s\)/ })).toBeDisabled();
+    expect(screen.getByText(/revisa la carpeta de no deseados/)).toBeInTheDocument();
     await usuario.type(campo, '000000');
     await usuario.click(screen.getByRole('button', { name: 'Verificar' }));
     expect(await screen.findByText('El código es incorrecto. Intenta de nuevo o solicita otro.')).toBeInTheDocument();
