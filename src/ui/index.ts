@@ -7,3 +7,4 @@ export * from './Etiquetas';
 export * from './Portada';
 export * from './Superficies';
 export type { Tono } from './tono';
+export * from './IconoCampanaBoleto';

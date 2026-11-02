@@ -13,6 +13,16 @@ describe('descubrimiento de eventos (RF-05 a RF-07, RF-19)', () => {
     expect(screen.queryByText(/ajedrez/)).not.toBeInTheDocument();
   });
 
+  it('la campana de Inicio explica que los avisos llegan por correo', async () => {
+    sesionComo('asistente@uv.mx');
+    const { usuario, enrutador } = renderizarApp('/');
+    await screen.findByText('Noche de jazz en el Foro');
+    await usuario.click(screen.getByRole('button', { name: 'Notificaciones' }));
+    expect(await screen.findByRole('heading', { name: 'Tus avisos llegan por correo' })).toBeInTheDocument();
+    expect(screen.getByText(/carpeta de no deseados/)).toBeInTheDocument();
+    expect(enrutador.state.location.pathname).toBe('/notificaciones');
+  });
+
   it('RF-06 y RF-07: busca por texto y filtra gratuitos; los filtros quedan en la URL', async () => {
     sesionComo('asistente@uv.mx');
     const { usuario, enrutador } = renderizarApp('/');
