@@ -6,7 +6,7 @@ La interfaz replica la app Android (mismos colores, componentes, textos y flujos
 
 |            |                                                                                                                      |
 | ---------- | -------------------------------------------------------------------------------------------------------------------- |
-| Versión    | 0.1.0 (en `develop`: alineación con Android v6, ver [cambios](CHANGELOG.md))                                         |
+| Versión    | 0.1.0 (en `develop`: alineación con Android y con las ramas nuevas de la API, ver [cambios](CHANGELOG.md))           |
 | Stack      | React 18 · TypeScript 5 (estricto) · Vite 6 · React Router 7 · TanStack Query 5                                      |
 | Pruebas    | Vitest + Testing Library + MSW (unitarias e integración) · Playwright + axe-core (extremo a extremo y accesibilidad) |
 | Calidad    | ESLint 9 (TypeScript, hooks, accesibilidad) · Prettier · cobertura mínima en la CI                                   |
