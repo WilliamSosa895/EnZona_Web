@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { MdArrowDropDown, MdClose, MdNearMe, MdPlace, MdSearch, MdSearchOff } from 'react-icons/md';
 import { eventosApi } from '@/api/eventos';
@@ -27,6 +27,7 @@ import {
   ChipFiltro,
   ChipMenu,
   EstadoVacio,
+  IconoCampanaBoleto,
   IndicadorCarga,
   Logo,
   Pagina,
@@ -77,6 +78,7 @@ function escribirFiltros(f: FiltrosInicio): URLSearchParams {
 
 /** Inicio: descubrimiento de eventos por zona o ubicación, con búsqueda y filtros (RF-05, RF-06, RF-07, RF-19). */
 export default function InicioPage() {
+  const navegar = useNavigate();
   const [parametros, setParametros] = useSearchParams();
   const filtros = leerFiltros(parametros);
   const cambiar = (f: FiltrosInicio) => setParametros(escribirFiltros(f), { replace: true });
@@ -198,7 +200,13 @@ export default function InicioPage() {
         />
       )}
       <header className={estilos.encabezado}>
-        <Logo alto={40} />
+        <div className={estilos.marca}>
+          <Logo alto={54} />
+          {/* La campana se muestra siempre: sin centro de notificaciones, la pantalla explica el aviso por correo. */}
+          <BotonIcono etiqueta="Notificaciones" onClick={() => navegar('/notificaciones')}>
+            <IconoCampanaBoleto />
+          </BotonIcono>
+        </div>
         <h1 className={estilos.titulo}>Eventos cerca de ti</h1>
         <button
           type="button"

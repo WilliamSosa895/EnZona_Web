@@ -25,6 +25,7 @@ const PanelEvento = lazy(() => import('@/features/organizador/PanelEventoPage'))
 const Escaner = lazy(() => import('@/features/validador/EscanerPage'));
 const Admin = lazy(() => import('@/features/admin/AdminPage'));
 const Ayuda = lazy(() => import('@/features/informacion/AyudaPage'));
+const Notificaciones = lazy(() => import('@/features/notificaciones/NotificacionesPage'));
 const Privacidad = lazy(() => import('@/features/informacion/PrivacidadPage'));
 const Legal = lazy(() => import('@/features/informacion/LegalPage'));
 const NoEncontrado = lazy(() => import('@/features/comun/NoEncontradoPage'));
@@ -80,6 +81,7 @@ export const rutas: RouteObject[] = [
       { path: '/perfil', element: <Perfil /> },
       { path: '/perfil/datos', element: <EditarDatos /> },
       { path: '/perfil/seguridad', element: <Seguridad /> },
+      { path: '/notificaciones', element: <Notificaciones /> },
       {
         path: '/organizador',
         element: (
