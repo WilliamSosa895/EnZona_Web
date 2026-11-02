@@ -14,10 +14,12 @@ import { DialogoCancelarEvento } from '@/features/organizador/DialogoCancelarEve
 import { vendidosDe } from '@/features/organizador/calculos';
 import {
   Aviso,
+  Boton,
   BotonSecundario,
   BotonTexto,
   Campo,
   ChipFiltro,
+  Dialogo,
   EstadoVacio,
   EtiquetaEstadoEvento,
   IndicadorCarga,
@@ -169,9 +171,22 @@ function TarjetaUsuario({ usuario }: { usuario: UsuarioAdmin }) {
   const consultas = useQueryClient();
   const esPropio = yo?.id === usuario.id;
   const bloqueado = usuario.estado === 'BLOQUEADO';
+  const [confirmandoActivacion, setConfirmandoActivacion] = useState(false);
+  const actualizar = () => {
+    void consultas.invalidateQueries({ queryKey: ['admin', 'usuarios'] });
+    void consultas.invalidateQueries({ queryKey: ['admin', 'estadisticas'] });
+  };
   const cambio = useMutation({
     mutationFn: () => administracionApi.cambiarEstado(usuario.id, bloqueado ? 'ACTIVO' : 'BLOQUEADO'),
-    onSuccess: () => void consultas.invalidateQueries({ queryKey: ['admin', 'usuarios'] }),
+    onSuccess: actualizar,
+  });
+  // Cuando el correo de verificación no llegó, la administración activa la cuenta sin código.
+  const activacion = useMutation({
+    mutationFn: () => administracionApi.darPorVerificada(usuario.id),
+    onSuccess: () => {
+      setConfirmandoActivacion(false);
+      actualizar();
+    },
   });
 
   return (
@@ -197,18 +212,36 @@ function TarjetaUsuario({ usuario }: { usuario: UsuarioAdmin }) {
       </p>
       {esPropio ? (
         <p className={estilos.apoyo}>Es tu propia cuenta: no puedes bloquearte.</p>
+      ) : usuario.estado === 'PENDIENTE' ? (
+        <BotonTexto onClick={() => setConfirmandoActivacion(true)}>Activar sin código</BotonTexto>
       ) : (
-        usuario.estado !== 'PENDIENTE' && (
-          <BotonTexto
-            tono={bloqueado ? 'enlace' : 'peligro'}
-            disabled={cambio.isPending}
-            onClick={() => cambio.mutate()}
-          >
-            {cambio.isPending ? 'Guardando…' : bloqueado ? 'Desbloquear cuenta' : 'Bloquear cuenta'}
-          </BotonTexto>
-        )
+        <BotonTexto tono={bloqueado ? 'enlace' : 'peligro'} disabled={cambio.isPending} onClick={() => cambio.mutate()}>
+          {cambio.isPending ? 'Guardando…' : bloqueado ? 'Desbloquear cuenta' : 'Bloquear cuenta'}
+        </BotonTexto>
       )}
       {cambio.isError && <Aviso tono="error" texto={mensajeDeError(cambio.error)} anunciar />}
+      {confirmandoActivacion && (
+        <Dialogo
+          titulo="¿Activar la cuenta sin código?"
+          onCerrar={activacion.isPending ? undefined : () => setConfirmandoActivacion(false)}
+          acciones={
+            <>
+              <BotonTexto tono="neutro" disabled={activacion.isPending} onClick={() => setConfirmandoActivacion(false)}>
+                Cancelar
+              </BotonTexto>
+              <Boton cargando={activacion.isPending} onClick={() => activacion.mutate()}>
+                Activar cuenta
+              </Boton>
+            </>
+          }
+        >
+          <p>
+            {usuario.nombre} ({usuario.correo}) no terminó la verificación. Úsalo solo cuando el código no le llegó y
+            confirmaste que el correo es suyo: la cuenta quedará activa y el correo, verificado.
+          </p>
+          {activacion.isError && <Aviso tono="error" texto={mensajeDeError(activacion.error)} anunciar />}
+        </Dialogo>
+      )}
     </article>
   );
 }

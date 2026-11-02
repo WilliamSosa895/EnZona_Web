@@ -111,6 +111,18 @@ function firmar(codigo: string): string {
 
 const siguiente = () => ++db.secuencia;
 
+/** Cuenta tal como la devuelve la administración (UsuarioAdminRespuesta). */
+const aUsuarioAdmin = (x: UsuarioSimulado) => ({
+  id: x.id,
+  nombre: x.nombre,
+  correo: x.correo,
+  telefono: x.telefono,
+  estado: x.estado,
+  correoVerificado: x.correoVerificado,
+  roles: x.roles,
+  fechaRegistro: x.fechaRegistro,
+});
+
 /** Emite N boletos (uno por asiento si el evento es numerado) y ocupa los asientos. */
 function emitirBoletos(
   e: EventoSimulado,
@@ -1033,17 +1045,26 @@ const otros = [
     const lista = db.usuarios
       .filter((x) => !estado || x.estado === estado)
       .filter((x) => !q || x.nombre.toLowerCase().includes(q) || x.correo.includes(q))
-      .map((x) => ({
-        id: x.id,
-        nombre: x.nombre,
-        correo: x.correo,
-        telefono: x.telefono,
-        estado: x.estado,
-        correoVerificado: x.correoVerificado,
-        roles: x.roles,
-        fechaRegistro: x.fechaRegistro,
-      }));
+      .map(aUsuarioAdmin);
     return paginar(lista, url);
+  }),
+
+  http.post(api('/admin/usuarios/:id/verificacion'), ({ request, params }) => {
+    const u = usuarioDe(request);
+    if (!u) return noAutenticado();
+    if (!tiene(u, 'ADMIN')) return prohibido();
+    const objetivo = db.usuarios.find((x) => x.id === Number(params.id));
+    if (!objetivo) return noEncontrado();
+    if (objetivo.estado !== 'PENDIENTE')
+      return problema(
+        422,
+        'REGLA_NEGOCIO',
+        `Solo se puede dar por verificada una cuenta PENDIENTE; esta está ${objetivo.estado}`,
+      );
+    objetivo.correoVerificado = true;
+    objetivo.telefonoVerificado = objetivo.telefono !== null;
+    objetivo.estado = 'ACTIVO';
+    return HttpResponse.json(aUsuarioAdmin(objetivo));
   }),
 
   http.patch(api('/admin/usuarios/:id/estado'), async ({ request, params }) => {
@@ -1055,16 +1076,7 @@ const otros = [
     if (objetivo.id === u.id) return problema(422, 'REGLA_NEGOCIO', 'No puedes cambiar el estado de tu propia cuenta');
     const { estado } = (await request.json()) as { estado: 'ACTIVO' | 'BLOQUEADO' };
     objetivo.estado = estado;
-    return HttpResponse.json({
-      id: objetivo.id,
-      nombre: objetivo.nombre,
-      correo: objetivo.correo,
-      telefono: objetivo.telefono,
-      estado: objetivo.estado,
-      correoVerificado: objetivo.correoVerificado,
-      roles: objetivo.roles,
-      fechaRegistro: objetivo.fechaRegistro,
-    });
+    return HttpResponse.json(aUsuarioAdmin(objetivo));
   }),
 
   http.get(api('/admin/eventos'), ({ request }) => {

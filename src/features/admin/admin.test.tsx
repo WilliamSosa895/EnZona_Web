@@ -17,6 +17,33 @@ describe('administración (RF-18)', () => {
     expect(within(propia).queryByRole('button', { name: /Bloquear/ })).not.toBeInTheDocument();
   });
 
+  it('activa sin código una cuenta pendiente cuyo correo no llegó', async () => {
+    sesionComo('admin@uv.mx', true);
+    const { usuario } = renderizarApp('/admin');
+    await usuario.click(await screen.findByRole('tab', { name: 'Usuarios' }));
+    const tarjeta = await screen.findByRole('article', { name: 'Paco Pendiente' });
+    expect(within(tarjeta).queryByRole('button', { name: 'Bloquear cuenta' })).not.toBeInTheDocument();
+    await usuario.click(within(tarjeta).getByRole('button', { name: 'Activar sin código' }));
+    const dialogo = await screen.findByRole('dialog', { name: '¿Activar la cuenta sin código?' });
+    await usuario.click(within(dialogo).getByRole('button', { name: 'Activar cuenta' }));
+    await waitFor(() => expect(base().usuarios.find((u) => u.id === 5)?.estado).toBe('ACTIVO'));
+    expect(base().usuarios.find((u) => u.id === 5)?.correoVerificado).toBe(true);
+    expect(await within(tarjeta).findByText('Activo')).toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('si la cuenta ya no está pendiente, la API lo rechaza y se explica', async () => {
+    sesionComo('admin@uv.mx', true);
+    const { usuario } = renderizarApp('/admin');
+    await usuario.click(await screen.findByRole('tab', { name: 'Usuarios' }));
+    const tarjeta = await screen.findByRole('article', { name: 'Paco Pendiente' });
+    base().usuarios.find((u) => u.id === 5)!.estado = 'ACTIVO'; // otra persona la activó mientras tanto
+    await usuario.click(within(tarjeta).getByRole('button', { name: 'Activar sin código' }));
+    const dialogo = await screen.findByRole('dialog', { name: '¿Activar la cuenta sin código?' });
+    await usuario.click(within(dialogo).getByRole('button', { name: 'Activar cuenta' }));
+    expect(await within(dialogo).findByRole('alert')).toHaveTextContent('Solo se puede dar por verificada');
+  });
+
   it('filtra usuarios por texto', async () => {
     sesionComo('admin@uv.mx', true);
     const { usuario } = renderizarApp('/admin');
