@@ -50,7 +50,7 @@ Se definen en `deploy/nginx.conf.template` (Docker) y `deploy/_headers` (Cloudfl
 ## Dependencias y secretos
 
 - Versiones fijas en `package.json` y `package-lock.json`; `npm ci` en la CI y en Docker.
-- La CI ejecuta `npm audit --omit=dev --audit-level=high`. Al publicar la versión 0.1.0, `npm audit` no reporta vulnerabilidades (producción y desarrollo).
+- La CI ejecuta `npm audit --omit=dev --audit-level=high`. Al publicar la versión 0.1.0, `npm audit` no reporta vulnerabilidades (producción y desarrollo). Al 1 de noviembre de 2026 las dependencias de producción siguen sin vulnerabilidades; en desarrollo hay un aviso moderado de `minimatch` ([GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249), denegación de servicio con patrones de archivos) que llega por ESLint y sus complementos. Ninguna versión de ESLint lo corrige todavía y forzar `minimatch` 11 rompe a `eslint-plugin-jsx-a11y`, que usa la API de la versión 3. Solo afecta al análisis estático en el equipo de desarrollo (los patrones vienen de la propia configuración) y no llega al paquete publicado; se actualizará cuando ESLint publique la corrección.
 - Solo las variables con prefijo `VITE_` llegan al navegador y ninguna es secreta. Los archivos `.env*` están en `.gitignore`, salvo `.env.example` y `.env.demo`, que no contienen secretos.
 - La imagen de Docker usa `nginx-unprivileged` (sin root) y no incluye el código fuente ni `node_modules`.
 
