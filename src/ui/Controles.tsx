@@ -206,6 +206,16 @@ export function ChipFiltro({ texto, activo, onClick, iconoFinal, deshabilitado }
   );
 }
 
+/** Chip de acción (AssistChip): ejecuta algo puntual, como usar una sugerencia. */
+export function ChipAccion({ texto, icono, onClick }: { texto: string; icono?: ReactNode; onClick: () => void }) {
+  return (
+    <button type="button" className={estilos.chip} onClick={onClick}>
+      {icono && <span aria-hidden="true">{icono}</span>}
+      {texto}
+    </button>
+  );
+}
+
 interface ChipMenuProps<T extends string | number> {
   etiqueta: string;
   /** Texto de la opción activa; null si el filtro está apagado (el chip muestra la etiqueta). */

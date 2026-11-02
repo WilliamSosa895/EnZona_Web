@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { MdAdd, MdDeleteOutline, MdEventBusy, MdEventSeat, MdPayments } from 'react-icons/md';
+import { MdAdd, MdDeleteOutline, MdEventBusy, MdEventSeat, MdPayments, MdPlace } from 'react-icons/md';
 import { eventosApi } from '@/api/eventos';
 import { ApiError } from '@/api/http';
 import type { Asiento, Categoria, Evento, EventoSolicitud } from '@/api/tipos';
@@ -18,6 +18,7 @@ import {
   BotonSecundario,
   BotonTexto,
   Campo,
+  ChipAccion,
   ChipFiltro,
   Dialogo,
   EstadoVacio,
@@ -26,7 +27,7 @@ import {
   Tarjeta,
 } from '@/ui';
 import { dentroDelArea } from '@/features/mapa/geo';
-import { vendidosDe } from './calculos';
+import { direccionTrasSugerencia, vendidosDe } from './calculos';
 import { SeccionPortada } from './SeccionPortada';
 import { usePortadaFormulario } from './usePortadaFormulario';
 import { CLAVES_GUIA } from '@/features/guias/almacen';
@@ -197,6 +198,8 @@ function Formulario({ titulo, categorias, existente, asientos }: FormularioProps
   // Última dirección propuesta por el mapa: distingue el texto automático del que escribió la persona.
   const [direccionSugerida, setDireccionSugerida] = useState<string | null>(null);
   const sugeridaAnterior = useRef<string | null>(null);
+  // true desde que la persona toca o arrastra el marcador hasta que llega la dirección de ese punto.
+  const eligioEnMapa = useRef(false);
   const [intentado, setIntentado] = useState(false);
   const [confirmarFecha, setConfirmarFecha] = useState<EventoSolicitud | null>(null);
 
@@ -275,8 +278,10 @@ function Formulario({ titulo, categorias, existente, asientos }: FormularioProps
     sumaTipos,
   ]);
 
-  // Dirección aproximada al fijar el marcador: se propone si el campo está vacío o aún tiene la sugerencia
-  // anterior; si la persona la escribió a mano, se respeta. Se espera a que el marcador quede quieto.
+  // Dirección del punto del mapa (EventFormScreen en Android): si la persona acaba de elegir el punto, sustituye
+  // lo escrito; al abrir un evento existente se respeta la dirección guardada salvo que esté vacía o sea la
+  // sugerencia anterior. Si después se edita a mano, el chip «Usar la dirección del mapa» la recupera. Se espera
+  // a que el marcador quede quieto.
   useEffect(() => {
     if (lat === null || lng === null) return;
     const control = new AbortController();
@@ -284,11 +289,13 @@ function Formulario({ titulo, categorias, existente, asientos }: FormularioProps
       direccionAproximada(lat, lng, control.signal)
         .then((sugerida) => {
           if (!sugerida) return;
-          setDireccion((actual) =>
-            !actual.trim() || actual === sugeridaAnterior.current ? sugerida.slice(0, 240) : actual,
-          );
-          sugeridaAnterior.current = sugerida.slice(0, 240);
-          setDireccionSugerida(sugerida);
+          const propuesta = sugerida.slice(0, 240);
+          const reemplazar = eligioEnMapa.current;
+          const anterior = sugeridaAnterior.current;
+          setDireccion((actual) => direccionTrasSugerencia(actual, propuesta, anterior, reemplazar));
+          sugeridaAnterior.current = propuesta;
+          eligioEnMapa.current = false;
+          setDireccionSugerida(propuesta);
         })
         .catch(() => undefined); // sin servicio, la dirección se escribe a mano
     }, 800);
@@ -503,7 +510,13 @@ function Formulario({ titulo, categorias, existente, asientos }: FormularioProps
             error={ver('lugar') ?? campoServidor('lugar')}
           />
           <div className={estilos.dosCampos}>
-            <Campo etiqueta="Dirección" valor={direccion} onCambio={setDireccion} maxLength={240} />
+            <Campo
+              etiqueta="Dirección"
+              valor={direccion}
+              onCambio={setDireccion}
+              maxLength={240}
+              ayuda="Al tocar el mapa se llena con la dirección de ese punto; después puedes editarla."
+            />
             <Campo etiqueta="Ciudad" valor={ciudad} onCambio={setCiudad} maxLength={80} />
           </div>
           <div className={estilos.mapa}>
@@ -512,14 +525,21 @@ function Formulario({ titulo, categorias, existente, asientos }: FormularioProps
                 lat={lat}
                 lng={lng}
                 onCambio={(a, b) => {
+                  eligioEnMapa.current = true;
                   setLat(a);
                   setLng(b);
                 }}
               />
             </Suspense>
           </div>
-          {tieneUbicacion && direccionSugerida && (
-            <p className={estilos.apoyo}>Dirección aproximada: {direccionSugerida}</p>
+          {tieneUbicacion && direccionSugerida && direccionSugerida !== direccion.trim() && (
+            <div>
+              <ChipAccion
+                texto="Usar la dirección del mapa"
+                icono={<MdPlace />}
+                onClick={() => setDireccion(direccionSugerida)}
+              />
+            </div>
           )}
           <p className={tieneUbicacion ? estilos.apoyo : estilos.textoError} aria-live="polite">
             {tieneUbicacion
