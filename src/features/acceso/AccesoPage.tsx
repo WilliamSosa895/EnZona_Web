@@ -41,7 +41,10 @@ export default function AccesoPage({ modoPersonal }: { modoPersonal: boolean }) 
     } catch (causa) {
       if (esCodigo(causa, 'CUENTA_PENDIENTE') && identificador.includes('@')) {
         navegar(`/verificacion?correo=${encodeURIComponent(identificador.trim())}`, {
-          state: { aviso: 'Tu cuenta aún no está verificada. Ingresa el código que enviamos a tu correo.' },
+          state: {
+            aviso:
+              'Tu cuenta aún no está verificada. Escribe el código que te enviamos por correo; si ya pasó un rato, pide uno nuevo en esta pantalla.',
+          },
         });
         return;
       }

@@ -14,7 +14,7 @@ const MENSAJES: Record<string, string> = {
   NO_AUTENTICADO: 'Tu sesión terminó. Vuelve a iniciar sesión.',
   CREDENCIALES_INVALIDAS: 'Credenciales inválidas. Revisa tu correo o CURP y tu contraseña.',
   ACCESO_DENEGADO: 'No tienes permiso para realizar esta acción.',
-  CUENTA_PENDIENTE: 'Tu cuenta aún no está verificada. Ingresa el código que enviamos a tu correo.',
+  CUENTA_PENDIENTE: 'Tu cuenta aún no está verificada. Escribe el código que te enviamos por correo.',
   CUENTA_BLOQUEADA: 'Tu cuenta está bloqueada. Escríbenos a soporte@enzona.mx.',
   NO_ENCONTRADO: 'No encontramos lo que buscas. Puede que ya no exista.',
   CORREO_REGISTRADO: 'Ese correo ya está registrado. Inicia sesión.',

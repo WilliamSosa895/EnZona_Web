@@ -7,11 +7,14 @@ import type { Perfil } from '@/api/tipos';
 import { claves } from '@/app/consultas';
 import { useSesion } from '@/auth/useSesion';
 import { mensajeDeError } from '@/lib/errores';
-import { MENSAJES, normalizarTelefono, telefonoValido } from '@/lib/validaciones';
+import { MENSAJES } from '@/lib/validaciones';
 import { Aviso, BarraSuperior, Boton, Campo, IndicadorCarga, Tarjeta } from '@/ui';
 import estilos from './Perfil.module.css';
 
-/** Editar mis datos (RF-04): nombre y teléfono. El CURP se guarda cifrado y no se puede cambiar. */
+/**
+ * Editar mis datos (RF-04): el nombre. El teléfono no se edita (la API pediría verificarlo por SMS y EnZona solo
+ * envía correo); se conserva el actual al guardar, como en Android. El CURP se guarda cifrado y no se puede cambiar.
+ */
 export default function EditarDatosPage() {
   const perfil = useQuery({ queryKey: claves.perfil, queryFn: ({ signal }) => identidadApi.perfil(signal) });
   return (
@@ -39,16 +42,14 @@ function Formulario({ perfil }: { perfil: Perfil }) {
   const consultas = useQueryClient();
   const { refrescar } = useSesion();
   const [nombre, setNombre] = useState(perfil.nombre);
-  const [telefono, setTelefono] = useState(perfil.telefono ?? '');
   const [intentado, setIntentado] = useState(false);
   const [guardado, setGuardado] = useState(false);
 
   const errorNombre = !nombre.trim() ? MENSAJES.nombre : nombre.trim().length > 120 ? 'Máximo 120 caracteres.' : null;
-  const errorTelefono = telefonoValido(telefono) ? null : MENSAJES.telefono;
-  const cambio = nombre.trim() !== perfil.nombre || normalizarTelefono(telefono) !== (perfil.telefono ?? null);
+  const cambio = nombre.trim() !== perfil.nombre;
 
   const guardar = useMutation({
-    mutationFn: () => identidadApi.actualizarPerfil(nombre.trim(), normalizarTelefono(telefono)),
+    mutationFn: () => identidadApi.actualizarPerfil(nombre.trim(), perfil.telefono),
     onSuccess: (nuevo) => {
       consultas.setQueryData(claves.perfil, nuevo);
       void refrescar(); // el nombre también se muestra en la sesión
@@ -61,7 +62,7 @@ function Formulario({ perfil }: { perfil: Perfil }) {
     e.preventDefault();
     setIntentado(true);
     setGuardado(false);
-    if (errorNombre || errorTelefono || !cambio) return;
+    if (errorNombre || !cambio) return;
     guardar.mutate();
   }
 
@@ -77,20 +78,6 @@ function Formulario({ perfil }: { perfil: Perfil }) {
         autoComplete="name"
         maxLength={120}
         error={(intentado && errorNombre) || errorServidor?.errorDeCampo('nombre')}
-      />
-      <Campo
-        etiqueta="Teléfono"
-        valor={telefono}
-        onCambio={(v) => {
-          // Solo dígitos (y el + de la lada internacional), sin espacios ni guiones, como en Android.
-          setTelefono(v.replace(/[^\d+]/g, '').slice(0, 16));
-          setGuardado(false);
-        }}
-        type="tel"
-        inputMode="tel"
-        autoComplete="tel"
-        ayuda="10 dígitos, sin espacios. Opcional; si lo cambias tendrás que verificarlo de nuevo."
-        error={(intentado && errorTelefono) || errorServidor?.errorDeCampo('telefono')}
       />
       <Tarjeta>
         <div className={estilos.dato}>
