@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { MdAdd, MdArrowDropDown, MdCheck, MdKeyboardArrowRight, MdRemove } from 'react-icons/md';
-import logo from '@/assets/enzona_logo.png';
+import logo from '@/assets/enzona_logo.svg';
 import { Boton, BotonIcono } from './Boton';
 import estilos from './Controles.module.css';
 
@@ -284,9 +284,19 @@ export function ChipMenu<T extends string | number>({
 
 // ---------------------------------------------------------------- marca y estructura
 
+/** Proporción del logo v1.2 (lienzo de 1382 × 380 del diseñador). */
+const PROPORCION_LOGO = 1382 / 380;
+
 export function Logo({ alto = 40 }: { alto?: number }) {
   return (
-    <img src={logo} alt="EnZona" className={estilos.logo} style={{ height: alto }} width={alto * 3.47} height={alto} />
+    <img
+      src={logo}
+      alt="EnZona"
+      className={estilos.logo}
+      style={{ height: alto }}
+      width={Math.round(alto * PROPORCION_LOGO)}
+      height={alto}
+    />
   );
 }
 
