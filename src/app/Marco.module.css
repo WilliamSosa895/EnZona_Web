@@ -98,9 +98,8 @@
   }
 
   .logoRiel {
-    display: grid;
-    place-items: center;
-    width: 56px;
+    display: block;
+    width: 53px;
     height: 56px;
     margin: 0 auto var(--esp-l);
   }

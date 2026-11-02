@@ -7,7 +7,7 @@ import { rutaInicio } from '@/auth/roles';
 import { useSesion } from '@/auth/useSesion';
 import { env } from '@/config/env';
 import { esCodigo, mensajeDeError } from '@/lib/errores';
-import logo from '@/assets/enzona_logo.png';
+import logo from '@/assets/enzona_logo.svg';
 import { Aviso, Boton, BotonTexto, Campo } from '@/ui';
 import estilos from './Acceso.module.css';
 
@@ -56,7 +56,7 @@ export default function AccesoPage({ modoPersonal }: { modoPersonal: boolean }) 
   return (
     <div className={estilos.pantalla}>
       <div className={estilos.columna}>
-        <img src={logo} alt="EnZona" className={estilos.logo} width={300} height={87} />
+        <img src={logo} alt="EnZona" className={estilos.logo} width={300} height={82} />
         {modoPersonal && <h1 className={estilos.titulo}>Acceso del personal</h1>}
         <p className={estilos.lema}>
           {modoPersonal ? 'Organizadores, validadores y administración' : 'Descubre y accede a los eventos de tu zona'}
