@@ -519,6 +519,16 @@ function Formulario({ titulo, categorias, existente, asientos }: FormularioProps
             />
             <Campo etiqueta="Ciudad" valor={ciudad} onCambio={setCiudad} maxLength={80} />
           </div>
+          {/* Junto al campo, como en Android: recupera la dirección del punto si se editó a mano. */}
+          {tieneUbicacion && direccionSugerida && direccionSugerida !== direccion.trim() && (
+            <div>
+              <ChipAccion
+                texto="Usar la dirección del mapa"
+                icono={<MdPlace />}
+                onClick={() => setDireccion(direccionSugerida)}
+              />
+            </div>
+          )}
           <div className={estilos.mapa}>
             <Suspense fallback={<IndicadorCarga texto="Cargando el mapa…" />}>
               <MapaSelector
@@ -532,15 +542,6 @@ function Formulario({ titulo, categorias, existente, asientos }: FormularioProps
               />
             </Suspense>
           </div>
-          {tieneUbicacion && direccionSugerida && direccionSugerida !== direccion.trim() && (
-            <div>
-              <ChipAccion
-                texto="Usar la dirección del mapa"
-                icono={<MdPlace />}
-                onClick={() => setDireccion(direccionSugerida)}
-              />
-            </div>
-          )}
           <p className={tieneUbicacion ? estilos.apoyo : estilos.textoError} aria-live="polite">
             {tieneUbicacion
               ? `Ubicación fijada (${lat?.toFixed(5)}, ${lng?.toFixed(5)}). Toca el mapa o arrastra el marcador para ajustarla.`
