@@ -1,0 +1,127 @@
+import { cn } from "@/lib/cn";
+
+/*
+ * Logo EnZona v1.2 (vector del diseñador, el mismo que `drawable/enzona_logo.xml`
+ * de la app Android): pin con boleto y la palabra «EnZona» con la «o» en forma
+ * de pin. Se dibuja en línea para que escale nítido y no dependa de otra petición.
+ * Las rutas son exactamente las del vector original.
+ */
+
+const PIN = (
+  <>
+    <path
+      fill="#1B819C"
+      d="M 180 6 C 274 6, 342 76, 342 168 C 342 238, 297 290, 269 322 C 245 348, 226 374, 180 374 C 134 374, 115 348, 91 322 C 63 290, 18 238, 18 168 C 18 76, 86 6, 180 6 Z"
+    />
+    <path
+      fill="#03223F"
+      d="M 180 25 C 256 25, 318 86, 318 168 C 318 228, 278 275, 255 305 C 236 330, 217 353, 180 353 C 143 353, 124 330, 105 305 C 82 275, 42 228, 42 168 C 42 86, 104 25, 180 25 Z"
+    />
+    <path
+      fill="#1C4E78"
+      fillRule="evenodd"
+      d="M 52 168 A 128 128 0 1 0 308 168 A 128 128 0 1 0 52 168 Z M 30 168 A 22 22 0 1 0 74 168 A 22 22 0 1 0 30 168 Z M 286 168 A 22 22 0 1 0 330 168 A 22 22 0 1 0 286 168 Z M 173 40 A 7 7 0 1 0 187 40 A 7 7 0 1 0 173 40 Z M 173 296 A 7 7 0 1 0 187 296 A 7 7 0 1 0 173 296 Z"
+    />
+    <g transform="translate(180 168) rotate(-45) translate(-75 -45)">
+      <path fill="#FFFFFF" d="M 0 0 H 150 V 30 A 15 15 0 0 0 150 60 V 90 H 0 V 60 A 15 15 0 0 0 0 30 Z" />
+      <path
+        stroke="#1C4E78"
+        strokeWidth="4.5"
+        strokeLinecap="round"
+        fill="none"
+        d="M 34 8 V 14 M 34 19 V 25 M 34 30 V 36 M 34 41 V 47 M 34 52 V 58 M 34 63 V 69 M 34 74 V 80 M 116 8 V 14 M 116 19 V 25 M 116 30 V 36 M 116 41 V 47 M 116 52 V 58 M 116 63 V 69 M 116 74 V 80"
+      />
+      <path stroke="rgba(28,78,120,0.4)" strokeWidth="2.5" fill="none" d="M 44 14 H 106 V 76 H 44 Z" />
+    </g>
+  </>
+);
+
+const PALABRA = (
+  <>
+    <path
+      fill="#21416E"
+      fillRule="evenodd"
+      d="M399.49 83 L509.49 83 C523.49 83 530.36 91 528.54 104 C526.71 117 517.58 125 503.58 125 L423.58 125 L419.65 153 C431.8 153 440.26 162.85 438.56 175 C436.85 187.15 425.62 197 413.46 197 L409.39 226 L489.39 226 C503.39 226 510.26 234 508.44 247 C506.61 260 497.49 268 483.49 268 L373.49 268 C351.49 268 341.45 254 344.55 232 L360.43 119 C363.52 97 377.49 83 399.49 83 Z"
+    />
+    <path
+      stroke="#21416E"
+      strokeWidth="9"
+      fill="none"
+      d="M 492.6 132 L 491.19 142 M 490.07 150 L 488.66 160 M 487.54 168 L 486.14 178 M 485.01 186 L 483.61 196 M 482.48 204 L 481.08 214"
+    />
+    <path
+      fill="#21416E"
+      fillRule="evenodd"
+      d="M547.44 126 L587.44 126 L584.91 144 C599.02 129 618.01 122 640.01 122 C674.01 122 690.91 144 685.85 180 L673.49 268 L629.49 268 L640.73 188 C643.82 166 634.23 156 617.23 156 C598.23 156 585.54 168 582.45 190 L571.49 268 L527.49 268 Z"
+    />
+    <path
+      fill="#3489B1"
+      fillRule="evenodd"
+      d="M723.49 83 L853.49 83 C867.49 83 873.94 94 862.97 108 L763.11 228 L835.11 228 C847.11 228 853.98 236 852.3 248 C850.61 260 841.49 268 829.49 268 L700.49 268 C686.49 268 680.03 257 691 243 L790.86 123 L717.86 123 C705.86 123 698.99 115 700.68 103 C702.36 91 711.49 83 723.49 83 Z"
+    />
+    <path
+      fill="#3489B1"
+      fillRule="evenodd"
+      d="M954.01 122 C1000.01 122 1027.79 152 1021.61 196 C1014.58 246 928.99 300 928.99 300 C928.99 300 858.58 246 865.61 196 C871.79 152 908.01 122 954.01 122 Z M948.66 160 C929.89 160.03 912.56 175.26 909.93 194.02 C907.31 212.79 920.39 228 939.16 228 C957.93 228 975.28 212.79 977.93 194.02 C980.58 175.26 967.53 160.03 948.76 160 Z"
+    />
+    <path
+      fill="#3489B1"
+      fillRule="evenodd"
+      d="M1051.44 126 L1091.44 126 L1088.91 144 C1103.02 129 1122.01 122 1144.01 122 C1178.01 122 1194.91 144 1189.85 180 L1177.49 268 L1133.49 268 L1144.73 188 C1147.82 166 1138.23 156 1121.23 156 C1102.23 156 1089.54 168 1086.45 190 L1075.49 268 L1031.49 268 Z"
+    />
+    <path
+      fill="#3489B1"
+      fillRule="evenodd"
+      d="M1288.01 122 C1248.01 122 1216.07 150 1209.75 195 C1203.42 240 1227.21 270 1267.21 270 C1287.21 270 1304.33 262 1316.3 248 L1313.49 268 L1355.49 268 L1375.44 126 L1333.44 126 L1330.91 144 C1322.88 130 1308.01 122 1288.01 122 Z M1292.95 158 C1314.95 158 1326.84 173 1323.61 196 C1320.37 219 1304.26 234 1282.26 234 C1260.26 234 1248.37 219 1251.61 196 C1254.84 173 1270.95 158 1292.95 158 Z"
+    />
+  </>
+);
+
+interface PropsLogo {
+  /** Alto en píxeles CSS; el ancho se deriva de la proporción 1382:380. */
+  alto?: number;
+  className?: string;
+  /** Solo el pin con el boleto (avatar, pantalla de conexión). */
+  soloPin?: boolean;
+  titulo?: string;
+}
+
+export function LogoEnZona({ alto = 44, className, soloPin, titulo = "EnZona" }: PropsLogo) {
+  if (soloPin) {
+    return (
+      <svg
+        viewBox="0 0 360 380"
+        height={alto}
+        width={Math.round((alto * 360) / 380)}
+        role="img"
+        aria-label={titulo}
+        className={cn("shrink-0", className)}
+      >
+        {PIN}
+      </svg>
+    );
+  }
+  return (
+    <svg
+      viewBox="0 0 1382 380"
+      height={alto}
+      width={Math.round((alto * 1382) / 380)}
+      role="img"
+      aria-label={titulo}
+      className={cn("shrink-0", className)}
+    >
+      {PIN}
+      {PALABRA}
+    </svg>
+  );
+}
+
+/** Solo la palabra en texto, para pies de página. */
+export function PalabraEnZona({ className }: { className?: string }) {
+  return (
+    <span className={cn("font-black tracking-tight", className)}>
+      <span className="text-marino">En</span>
+      <span className="text-enzona">Zona</span>
+    </span>
+  );
+}

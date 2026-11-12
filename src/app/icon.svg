@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 380" width="360" height="380" role="img" aria-label="EnZona">
+  <path fill="#1B819C" d="M 180 6 C 274 6, 342 76, 342 168 C 342 238, 297 290, 269 322 C 245 348, 226 374, 180 374 C 134 374, 115 348, 91 322 C 63 290, 18 238, 18 168 C 18 76, 86 6, 180 6 Z"/>
+  <path fill="#03223F" d="M 180 25 C 256 25, 318 86, 318 168 C 318 228, 278 275, 255 305 C 236 330, 217 353, 180 353 C 143 353, 124 330, 105 305 C 82 275, 42 228, 42 168 C 42 86, 104 25, 180 25 Z"/>
+  <path fill="#1C4E78" fill-rule="evenodd" d="M 52 168 A 128 128 0 1 0 308 168 A 128 128 0 1 0 52 168 Z M 30 168 A 22 22 0 1 0 74 168 A 22 22 0 1 0 30 168 Z M 286 168 A 22 22 0 1 0 330 168 A 22 22 0 1 0 286 168 Z M 173 40 A 7 7 0 1 0 187 40 A 7 7 0 1 0 173 40 Z M 173 296 A 7 7 0 1 0 187 296 A 7 7 0 1 0 173 296 Z"/>
+  <g transform="translate(180 168) rotate(-45) translate(-75 -45)">
+    <path fill="#FFFFFF" d="M 0 0 H 150 V 30 A 15 15 0 0 0 150 60 V 90 H 0 V 60 A 15 15 0 0 0 0 30 Z"/>
+    <path stroke="#1C4E78" stroke-width="4.5" stroke-linecap="round" fill="none" d="M 34 8 V 14 M 34 19 V 25 M 34 30 V 36 M 34 41 V 47 M 34 52 V 58 M 34 63 V 69 M 34 74 V 80"/>
+    <path stroke="#1C4E78" stroke-width="4.5" stroke-linecap="round" fill="none" d="M 116 8 V 14 M 116 19 V 25 M 116 30 V 36 M 116 41 V 47 M 116 52 V 58 M 116 63 V 69 M 116 74 V 80"/>
+    <path stroke="rgba(28,78,120,0.4)" stroke-width="2.5" fill="none" d="M 44 14 H 106 V 76 H 44 Z"/>
+  </g>
+</svg>

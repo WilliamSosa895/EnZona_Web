@@ -1,0 +1,427 @@
+@import "tailwindcss";
+
+/*
+ * Tokens de EnZona (paleta v2 "Paleta de color de la plataforma").
+ * Mismos hexadecimales que ui/theme/Color.kt de la app Android.
+ * Tema claro único: la marca se ve igual en todos los dispositivos.
+ *
+ * Parejas de texto verificadas (WCAG ≥ 4.5:1 en texto normal):
+ *   blanco / azul marino 11.5 · blanco / azul profundo 5.5 · tinta / coral 4.95
+ *   gris texto / blanco 5.3 · verde texto / verde contenedor 4.7 · azul marino / advertencia 6.2
+ * Evitadas: blanco / coral (3.15), blanco / azul EnZona (4.1), gris suave como texto (2.5).
+ */
+@theme {
+  --color-*: initial;
+
+  /* marca */
+  --color-marino: #1f3a5f;
+  --color-enzona: #2e86ab;
+  --color-profundo: #24708f;
+  --color-degradado-inicio: #274c78;
+  --color-coral: #f2643b;
+  --color-coral-oscuro: #d64e2a;
+  --color-coral-suave: #fde9e2;
+
+  /* tintes del azul marino */
+  --color-tinte-50: #eaf0f7;
+  --color-tinte-100: #d7e1ee;
+  --color-tinte-200: #b9c9dd;
+
+  /* neutrales */
+  --color-tinta: #1b2432;
+  --color-gris-texto: #5d6d7e;
+  --color-gris-suave: #9aa6b6;
+  --color-linea: #d9dfea;
+  --color-fondo: #eef1f6;
+  --color-superficie: #ffffff;
+  --color-superficie-baja: #f6f8fb;
+  --color-superficie-alta: #e6ebf3;
+  --color-blanco: #ffffff;
+  --color-negro: #000000;
+  --color-transparente: transparent;
+
+  /* semánticos */
+  --color-exito: #2e9e5b;
+  --color-exito-contenedor: #e5f3ec;
+  --color-sobre-exito: #1e7a45;
+  --color-aviso: #f1b434;
+  --color-aviso-contenedor: #fbf0d5;
+  --color-sobre-aviso: #1f3a5f;
+  --color-error: #c0392b;
+  --color-error-contenedor: #f9e3e0;
+  --color-sobre-error: #8e2a1f;
+  --color-info: #2e86ab;
+  --color-info-contenedor: #e3f0f6;
+  --color-sobre-info: #1b4f63;
+
+  /* pantalla de conexión / splash */
+  --color-cielo: #e4f2fa;
+
+  /* tipografía: Roboto como en la app (next/font la inyecta en --font-roboto) */
+  --font-sans: var(--font-roboto), Roboto, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  /* formas: campos 12, tarjetas 20, hojas 28, botones píldora */
+  --radius-campo: 12px;
+  --radius-tarjeta: 20px;
+  --radius-hoja: 28px;
+  --radius-pildora: 9999px;
+
+  /* sombras discretas (la app casi no usa elevación) */
+  --shadow-tarjeta: 0 1px 2px rgba(27, 36, 50, 0.04), 0 4px 16px rgba(27, 36, 50, 0.06);
+  --shadow-flotante: 0 8px 28px rgba(27, 36, 50, 0.16);
+
+  /* alturas de control: 48 táctil, 52 botón principal */
+  --spacing-control: 3rem;
+  --spacing-boton-principal: 3.25rem;
+}
+
+:root {
+  color-scheme: light;
+  --barra-inferior: 4.5rem;
+}
+
+html {
+  background: var(--color-fondo);
+}
+
+body {
+  background: var(--color-fondo);
+  color: var(--color-tinta);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  min-height: 100dvh;
+}
+
+/* Foco visible y coherente en todo control */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 3px solid var(--color-profundo);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Movimiento reducido: sin animaciones no esenciales */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Ocultar barras de scroll en carruseles horizontales sin perder el scroll */
+.sin-scrollbar {
+  scrollbar-width: none;
+}
+.sin-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Talón de boleto: muescas laterales entre la cabecera y el QR */
+.boleto-muesca {
+  --muesca: 22px;
+  mask:
+    radial-gradient(circle at 0 var(--muesca-y, 0), transparent calc(var(--muesca) / 2), #000 calc(var(--muesca) / 2 + 0.5px)),
+    radial-gradient(circle at 100% var(--muesca-y, 0), transparent calc(var(--muesca) / 2), #000 calc(var(--muesca) / 2 + 0.5px));
+  mask-composite: intersect;
+  -webkit-mask-composite: source-in;
+}
+
+/* Animación de la pantalla de conexión (logo que se arma) */
+@keyframes trazo {
+  from {
+    stroke-dashoffset: 1200;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes aparecer {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  60% {
+    transform: scale(1.06);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes entrar {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+@keyframes pulso-resultado {
+  from {
+    transform: scale(0.96);
+    opacity: 0.6;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* ==================================================================
+   Movimiento de la marca: una entrada orquestada por pantalla, botones que
+   responden al tacto y tarjetas que se levantan. Todo se anula con
+   prefers-reduced-motion (regla de arriba).
+   ================================================================== */
+
+/* Curvas */
+:root {
+  --suave: cubic-bezier(0.22, 1, 0.36, 1);
+  --rebote: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Botones: elevación al pasar, compresión al pulsar y destello en el coral */
+.boton-vivo {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  transition:
+    transform 180ms var(--suave),
+    box-shadow 180ms var(--suave),
+    background-color 150ms ease;
+  will-change: transform;
+}
+.boton-vivo:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+.boton-vivo:active:not(:disabled) {
+  transform: translateY(0) scale(0.97);
+  transition-duration: 80ms;
+}
+.boton-destacado:hover:not(:disabled) {
+  box-shadow: 0 10px 24px -8px rgba(242, 100, 59, 0.65);
+}
+.boton-principal:hover:not(:disabled) {
+  box-shadow: 0 10px 24px -8px rgba(31, 58, 95, 0.55);
+}
+.boton-destacado::after,
+.boton-principal::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(115deg, transparent 35%, rgba(255, 255, 255, 0.35) 50%, transparent 65%);
+  transform: translateX(-120%);
+  transition: transform 0s;
+  pointer-events: none;
+}
+.boton-destacado:hover:not(:disabled)::after,
+.boton-principal:hover:not(:disabled)::after {
+  transform: translateX(120%);
+  transition: transform 650ms var(--suave);
+}
+
+/* Flecha que avanza dentro de un botón */
+.boton-vivo .flecha {
+  transition: transform 200ms var(--suave);
+}
+.boton-vivo:hover:not(:disabled) .flecha {
+  transform: translateX(4px);
+}
+
+/* Tarjetas que se levantan y portada que acerca */
+.tarjeta-viva {
+  transition:
+    transform 260ms var(--suave),
+    box-shadow 260ms var(--suave);
+  will-change: transform;
+}
+.tarjeta-viva:hover,
+.tarjeta-viva:focus-within {
+  transform: translateY(-4px);
+  box-shadow: 0 18px 40px -16px rgba(27, 36, 50, 0.28);
+}
+.tarjeta-viva .portada-zoom {
+  transition: transform 700ms var(--suave);
+}
+.tarjeta-viva:hover .portada-zoom,
+.tarjeta-viva:focus-within .portada-zoom {
+  transform: scale(1.04);
+}
+
+/* Entrada orquestada: cada elemento con .revelar aparece al entrar en pantalla,
+   con un retraso escalonado por --orden */
+.revelar {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 600ms var(--suave),
+    transform 700ms var(--suave);
+  transition-delay: calc(var(--orden, 0) * 70ms);
+}
+.revelar.visible {
+  opacity: 1;
+  transform: none;
+}
+/* Sin JavaScript (o antes de hidratar) nada queda oculto */
+html:not(.js) .revelar {
+  opacity: 1;
+  transform: none;
+}
+
+/* Títulos de página: entran de abajo con un ligero desenfoque, como un cartel */
+@keyframes titulo-entra {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: blur(0);
+  }
+}
+.titulo-vivo {
+  animation: titulo-entra 700ms var(--suave) both;
+}
+
+/* Chips de filtro */
+.chip-vivo {
+  transition:
+    transform 160ms var(--suave),
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
+}
+.chip-vivo:hover {
+  transform: translateY(-1px);
+}
+.chip-vivo:active {
+  transform: scale(0.96);
+}
+
+/* Boleto: el talón entra girando apenas y una franja de luz recorre la cabecera
+   (señal de boleto "vivo", como los boletos dinámicos de las boleteras) */
+@keyframes talon-entra {
+  from {
+    opacity: 0;
+    transform: translateY(28px) rotate(-1.2deg) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.talon-vivo {
+  animation: talon-entra 650ms var(--rebote) both;
+  transform-origin: 50% 100%;
+}
+@keyframes franja-luz {
+  0% {
+    transform: translateX(-140%) skewX(-18deg);
+  }
+  100% {
+    transform: translateX(260%) skewX(-18deg);
+  }
+}
+.franja-luz::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 45%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.14), transparent);
+  animation: franja-luz 3.2s ease-in-out 1.2s infinite;
+  pointer-events: none;
+}
+@keyframes qr-entra {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.qr-vivo {
+  animation: qr-entra 500ms 250ms var(--suave) both;
+}
+@keyframes latido {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(46, 158, 91, 0.45);
+  }
+  60% {
+    box-shadow: 0 0 0 10px rgba(46, 158, 91, 0);
+  }
+}
+.latido-exito {
+  animation: latido 2.2s ease-out 1s infinite;
+}
+
+/* Navegación: el indicador activo se desliza */
+.nav-vivo {
+  transition:
+    background-color 220ms var(--suave),
+    color 220ms var(--suave),
+    transform 220ms var(--suave);
+}
+.nav-vivo:active {
+  transform: scale(0.94);
+}
+
+/* Barra de compra: entra desde abajo en móvil */
+@keyframes barra-entra {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+.barra-viva {
+  animation: barra-entra 420ms 150ms var(--suave) both;
+}
+@media (min-width: 64rem) {
+  .barra-viva {
+    animation: none;
+  }
+}
+
+/* Butacas del plano */
+.butaca-viva {
+  transition:
+    transform 140ms var(--suave),
+    background-color 140ms ease,
+    border-color 140ms ease;
+}
+.butaca-viva:hover:not(:disabled) {
+  transform: scale(1.12);
+}
+.butaca-viva:active:not(:disabled) {
+  transform: scale(0.94);
+}
+.butaca-viva[aria-pressed="true"] {
+  animation: aparecer 260ms var(--rebote);
+}
+
+/* Indicadores numéricos que suben */
+@keyframes numero-sube {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.numero-vivo {
+  animation: numero-sube 600ms var(--suave) both;
+}

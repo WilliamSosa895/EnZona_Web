@@ -1,0 +1,38 @@
+# Claude Code / agentes (nunca subir)
+.claude/
+.agents/
+skills-lock.json
+CLAUDE.local.md
+
+# Dependencias
+node_modules/
+.pnp
+.pnp.js
+
+# Next.js
+.next/
+out/
+build/
+dist/
+
+# Entorno
+.env
+.env.*
+!.env.example
+
+# Logs y debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# Sistema / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.tsbuildinfo
+next-env.d.ts
+coverage/
+.vercel
