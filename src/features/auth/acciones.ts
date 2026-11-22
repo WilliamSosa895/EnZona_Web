@@ -125,7 +125,7 @@ const esquemaRegistro = z
       .refine((valor) => /[A-Za-z]/.test(valor) && /\d/.test(valor), "Incluye letras y números."),
     confirmacion: z.string(),
     organizador: z.boolean(),
-    aceptaAvisoPrivacidad: z.literal(true, { errorMap: () => ({ message: "Debes aceptar el aviso de privacidad." }) }),
+    aceptaAvisoPrivacidad: z.literal(true, { error: "Debes aceptar el aviso de privacidad." }),
   })
   .refine((datos) => datos.contrasena === datos.confirmacion, {
     path: ["confirmacion"],
