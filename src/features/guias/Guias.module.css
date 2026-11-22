@@ -1,0 +1,105 @@
+/* Guía interactiva: estilo mínimo, fondo oscuro, texto blanco y una flecha al elemento iluminado. */
+.superposicion {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  color: #fff;
+  cursor: pointer;
+  animation: aparecer 0.2s ease-out;
+}
+
+@keyframes aparecer {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .superposicion {
+    animation: none;
+  }
+}
+
+.lienzo {
+  position: absolute;
+  inset: 0;
+}
+
+/* Tinta al 95 %: la pantalla de abajo solo se intuye. */
+.sombra {
+  fill: rgb(27 36 50 / 0.95);
+}
+
+.flecha {
+  fill: none;
+  stroke: #fff;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.texto {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-s);
+  cursor: default;
+}
+
+.titulo {
+  font: var(--headline-small);
+  font-weight: 700;
+}
+
+.cuerpo {
+  color: rgb(255 255 255 / 0.85);
+  font: var(--body-large);
+}
+
+.barra {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--esp-s);
+  padding: var(--esp-s) var(--esp-s) calc(var(--esp-s) + env(safe-area-inset-bottom));
+  cursor: default;
+}
+
+.barraArriba {
+  top: 0;
+  bottom: auto;
+  padding: calc(var(--esp-s) + env(safe-area-inset-top)) var(--esp-s) var(--esp-s);
+}
+
+.contador {
+  margin-left: auto;
+  color: rgb(255 255 255 / 0.85);
+  font: var(--label-large);
+}
+
+.boton {
+  min-width: var(--control);
+  min-height: var(--control);
+  padding: 0 var(--esp-m);
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #fff;
+  font: var(--label-large);
+  cursor: pointer;
+}
+
+.boton:hover {
+  background: rgb(255 255 255 / 0.12);
+}
+
+.boton:focus-visible {
+  outline: 3px solid var(--coral);
+  outline-offset: 2px;
+}
+
+.principal {
+  font-weight: 700;
+}

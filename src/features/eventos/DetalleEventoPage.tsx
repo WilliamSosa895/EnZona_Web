@@ -28,6 +28,9 @@ import {
 } from '@/ui';
 import { MAXIMO_POR_ORDEN, rutaPago } from '@/features/compra/pedido';
 import { urlComoLlegar } from '@/features/mapa/geo';
+import { CLAVES_GUIA } from '@/features/guias/almacen';
+import { pasosDetalle } from '@/features/guias/pasos';
+import { useGuia } from '@/features/guias/useGuia';
 import estilos from './Eventos.module.css';
 
 const MiniMapa = lazy(() => import('@/features/mapa/Mapas').then((m) => ({ default: m.MiniMapa })));
@@ -121,6 +124,19 @@ function Detalle({ evento, boletosPropios }: { evento: Evento; boletosPropios: n
     }
   }
 
+  // Guía de la primera vez: solo cuando se puede comprar o confirmar (en un evento cancelado no hay nada que explicar).
+  const conTipos = evento.esDePago && tipos.length > 0;
+  useGuia(
+    CLAVES_GUIA.DETALLE_EVENTO,
+    pasosDetalle({
+      conTipos,
+      conCantidad: conTipos,
+      esDePago: evento.esDePago,
+      requiereAsiento: evento.requiereAsiento,
+    }),
+    puedeActuar,
+  );
+
   const textoAyuda = !puedeActuar
     ? null
     : evento.requiereAsiento
@@ -139,8 +155,10 @@ function Detalle({ evento, boletosPropios }: { evento: Evento; boletosPropios: n
             nombre={evento.nombre}
             categoria={evento.categoria}
             fecha={evento.fechaHoraInicio}
+            imagenUrl={evento.imagenUrl}
             mostrarFecha={false}
             ancha
+            prioritaria
           />
           <div>
             <h1 className={estilos.nombreEvento}>{evento.nombre}</h1>
@@ -216,7 +234,7 @@ function Detalle({ evento, boletosPropios }: { evento: Evento; boletosPropios: n
         <aside className={[estilos.columna, estilos.compra].join(' ')} aria-label="Boletos">
           {evento.esDePago && tipos.length > 0 && !cancelado && !realizado && (
             <>
-              <section>
+              <section data-guia="detalle_tipos">
                 <h2 className={estilos.subtitulo} id="titulo-tipos">
                   Elige tu boleto
                 </h2>
@@ -232,7 +250,7 @@ function Detalle({ evento, boletosPropios }: { evento: Evento; boletosPropios: n
                 </div>
                 {tipos.length > 1 && <p className={estilos.pista}>Hay {tipos.length} tipos de boleto.</p>}
               </section>
-              <Tarjeta>
+              <Tarjeta data-guia="detalle_cantidad">
                 <SelectorCantidad cantidad={cantidad} maximo={maximo} onCambio={setCantidad} habilitado={puedeActuar} />
                 {cantidad > 1 && (
                   <p className={estilos.pista} style={{ marginTop: 8 }}>
@@ -243,7 +261,13 @@ function Detalle({ evento, boletosPropios }: { evento: Evento; boletosPropios: n
             </>
           )}
           {textoAyuda && <p className={estilos.nota}>{textoAyuda}</p>}
-          <BarraAccion textoBoton={textoBoton} resumen={resumen} habilitado={puedeActuar} onClick={actuar} />
+          <BarraAccion
+            textoBoton={textoBoton}
+            resumen={resumen}
+            habilitado={puedeActuar}
+            onClick={actuar}
+            guia="detalle_accion"
+          />
         </aside>
       </div>
     </>

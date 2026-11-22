@@ -1,0 +1,56 @@
+.editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-s);
+}
+
+.marco {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: var(--radio-l);
+  background: var(--superficie-baja);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.marco:active {
+  cursor: grabbing;
+}
+
+.marco:focus-visible {
+  outline: 3px solid var(--coral);
+  outline-offset: 2px;
+}
+
+.bloqueado {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.lienzo {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.ayuda {
+  color: var(--on-surface-variant);
+  font: var(--body-small);
+}
+
+.zoom {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-s);
+  color: var(--on-surface-variant);
+  font: var(--body-small);
+}
+
+.zoom input {
+  flex: 1;
+  min-height: var(--control);
+  accent-color: var(--coral);
+}

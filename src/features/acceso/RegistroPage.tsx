@@ -3,26 +3,20 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { ApiError } from '@/api/http';
 import { identidadApi } from '@/api/identidad';
+import { env } from '@/config/env';
 import { mensajeDeError } from '@/lib/errores';
-import {
-  MENSAJES,
-  contrasenaValida,
-  correoValido,
-  curpValido,
-  normalizarTelefono,
-  telefonoValido,
-} from '@/lib/validaciones';
+import { MENSAJES, contrasenaValida, correoValido, curpValido } from '@/lib/validaciones';
 import { Aviso, BarraSuperior, Boton, Campo } from '@/ui';
+import { registrarEnvio } from './reenvio';
 import estilos from './Acceso.module.css';
 
-type CampoRegistro = 'nombre' | 'correo' | 'telefono' | 'curp' | 'contrasena' | 'confirmar' | 'aviso';
+type CampoRegistro = 'nombre' | 'correo' | 'curp' | 'contrasena' | 'confirmar' | 'aviso';
 
 /** Errores de los campos según las mismas reglas que la API (se muestran después del primer intento). */
 function validar(d: Record<CampoRegistro, string | boolean>): Partial<Record<CampoRegistro, string>> {
   const errores: Partial<Record<CampoRegistro, string>> = {};
   if (!String(d.nombre).trim()) errores.nombre = MENSAJES.nombre;
   if (!correoValido(String(d.correo))) errores.correo = MENSAJES.correo;
-  if (!telefonoValido(String(d.telefono))) errores.telefono = MENSAJES.telefono;
   if (!curpValido(String(d.curp))) errores.curp = MENSAJES.curp;
   if (!contrasenaValida(String(d.contrasena))) errores.contrasena = MENSAJES.contrasena;
   if (d.contrasena !== d.confirmar) errores.confirmar = MENSAJES.confirmar;
@@ -30,12 +24,15 @@ function validar(d: Record<CampoRegistro, string | boolean>): Partial<Record<Cam
   return errores;
 }
 
-/** Registro de usuario (RF-01). Casos CP-01 (datos válidos), CP-02 (CURP duplicado) y CP-03 (CURP inválido). */
+/**
+ * Registro de usuario (RF-01). Casos CP-01 (datos válidos), CP-02 (CURP duplicado) y CP-03 (CURP inválido).
+ * No se pide teléfono: la API solo envía correo y un teléfono registrado exigiría un código por SMS que nunca
+ * llegaría, así que la cuenta quedaría pendiente (como en Android con `verificacionPorTelefono = false`).
+ */
 export default function RegistroPage() {
   const navegar = useNavigate();
   const [nombre, setNombre] = useState('');
   const [correo, setCorreo] = useState('');
-  const [telefono, setTelefono] = useState('');
   const [curp, setCurp] = useState('');
   const [contrasena, setContrasena] = useState('');
   const [confirmar, setConfirmar] = useState('');
@@ -43,7 +40,7 @@ export default function RegistroPage() {
   const [intentado, setIntentado] = useState(false);
   const [erroresServidor, setErroresServidor] = useState<Partial<Record<CampoRegistro, string>>>({});
 
-  const errores = intentado ? validar({ nombre, correo, telefono, curp, contrasena, confirmar, aviso }) : {};
+  const errores = intentado ? validar({ nombre, correo, curp, contrasena, confirmar, aviso }) : {};
   const error = (c: CampoRegistro) => errores[c] ?? erroresServidor[c];
 
   const registro = useMutation({
@@ -51,17 +48,18 @@ export default function RegistroPage() {
       identidadApi.registrar({
         nombre: nombre.trim(),
         correo: correo.trim().toLowerCase(),
-        telefono: normalizarTelefono(telefono),
+        telefono: null,
         curp: curp.trim().toUpperCase(),
         contrasena,
         organizador: false,
         aceptaAvisoPrivacidad: aviso,
       }),
     onSuccess: (r) => {
-      const telefonoPendiente = r.verificacionesPendientes.includes('TELEFONO');
-      navegar(`/verificacion?correo=${encodeURIComponent(r.correo)}${telefonoPendiente ? '&telefono=1' : ''}`, {
+      // La API acaba de emitir el código: la espera para reenviarlo corre desde ahora.
+      registrarEnvio(r.correo);
+      navegar(`/verificacion?correo=${encodeURIComponent(r.correo)}`, {
         replace: true,
-        state: { aviso: 'Tu cuenta se creó. Te enviamos un código de 6 dígitos para activarla.' },
+        state: { aviso: 'Tu cuenta se creó. Te enviamos un código de 6 dígitos a tu correo para activarla.' },
       });
     },
     onError: (causa) => {
@@ -84,7 +82,7 @@ export default function RegistroPage() {
     e.preventDefault();
     setIntentado(true);
     setErroresServidor({});
-    const pendientes = validar({ nombre, correo, telefono, curp, contrasena, confirmar, aviso });
+    const pendientes = validar({ nombre, correo, curp, contrasena, confirmar, aviso });
     if (Object.keys(pendientes).length === 0 && !registro.isPending) registro.mutate();
   }
 
@@ -125,24 +123,13 @@ export default function RegistroPage() {
             limpiar('correo');
           }}
           error={error('correo')}
+          // Con la API simulada no se envía correo: el código se muestra en la siguiente pantalla.
+          ayuda={env.apiSimulada ? undefined : 'Te enviaremos un código de verificación a este correo.'}
           type="email"
           inputMode="email"
           autoComplete="email"
           autoCapitalize="none"
           maxLength={180}
-        />
-        <Campo
-          etiqueta="Teléfono (opcional)"
-          valor={telefono}
-          onCambio={(v) => {
-            setTelefono(v);
-            limpiar('telefono');
-          }}
-          error={error('telefono')}
-          ayuda="Si lo registras, también lo verificaremos con un código."
-          type="tel"
-          inputMode="tel"
-          autoComplete="tel"
         />
         <Campo
           etiqueta="CURP"

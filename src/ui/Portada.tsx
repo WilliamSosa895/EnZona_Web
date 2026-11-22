@@ -1,11 +1,14 @@
+import { useState } from 'react';
 import type { IconType } from 'react-icons';
 import { MdCelebration, MdMemory, MdMusicNote, MdSchool, MdSportsSoccer, MdTheaterComedy } from 'react-icons/md';
 import { dia, mesCorto } from '@/lib/fechas';
+import { urlPortada } from '@/lib/portada';
 import estilos from './Portada.module.css';
 
 /*
- * Portada del evento. Ni el esquema (`evento`) ni la API tienen imagen de portada: el sustituto es un panel
- * plano por categoría con la fecha como pieza tipográfica, igual que en la app Android (ui/components/Portada.kt).
+ * Portada del evento (ui/components/Portada.kt en Android). El evento puede traer `imagenUrl` (la sube el
+ * organizador y la guarda la API en su almacén). Mientras carga, o si falla, se ve el sustituto: un panel plano
+ * por categoría con la fecha como pieza tipográfica, información real del evento y no decoración.
  */
 interface TonoPortada {
   fondo: string;
@@ -40,6 +43,10 @@ interface PortadaProps {
   soloArriba?: boolean;
   /** En pantallas anchas usa una proporción más baja (cabecera del detalle). */
   ancha?: boolean;
+  /** Portada que entrega la API (relativa o absoluta) o una vista previa local (blob:). */
+  imagenUrl?: string | null;
+  /** Prioridad de descarga: la del detalle se pide de inmediato; las del catálogo, al acercarse. */
+  prioritaria?: boolean;
 }
 
 /** Portada 16:9 con el sustituto por categoría. */
@@ -50,12 +57,22 @@ export function Portada({
   mostrarFecha = true,
   soloArriba = false,
   ancha = false,
+  imagenUrl = null,
+  prioritaria = false,
 }: PortadaProps) {
   const tono = tonoDe(categoria);
   const Icono = tono.icono;
+  const fuente = urlPortada(imagenUrl);
+  // Se recuerda qué URL falló (y no un booleano) para volver a intentar si el evento cambia de portada.
+  const [fallida, setFallida] = useState<string | null>(null);
+  const [cargada, setCargada] = useState<string | null>(null);
+  const conImagen = fuente !== null && fallida !== fuente;
   return (
     <div
-      className={[estilos.portada, soloArriba ? estilos.soloArriba : '', ancha ? estilos.ancha : ''].join(' ')}
+      // Con foto se respeta el 16:9 en que la encuadró el organizador; el sustituto puede ser más bajo.
+      className={[estilos.portada, soloArriba ? estilos.soloArriba : '', ancha && !conImagen ? estilos.ancha : ''].join(
+        ' ',
+      )}
       style={{ background: tono.fondo }}
       role="img"
       aria-label={`Portada de ${nombre}${categoria ? `, categoría ${categoria}` : ''}`}
@@ -65,6 +82,18 @@ export function Portada({
         <span className={estilos.categoria} style={{ color: tono.tinta }} aria-hidden="true">
           {categoria}
         </span>
+      )}
+      {conImagen && (
+        <img
+          src={fuente}
+          alt=""
+          className={[estilos.imagen, cargada === fuente ? estilos.imagenLista : ''].join(' ')}
+          loading={prioritaria ? 'eager' : 'lazy'}
+          decoding="async"
+          referrerPolicy="no-referrer"
+          onLoad={() => setCargada(fuente)}
+          onError={() => setFallida(fuente)}
+        />
       )}
       {mostrarFecha && (
         <span className={estilos.bloqueFecha}>

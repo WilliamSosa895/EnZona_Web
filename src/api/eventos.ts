@@ -46,4 +46,16 @@ export const eventosApi = {
     peticion<CancelacionRespuesta>('POST', `/api/eventos/${id}/cancelacion`, { cuerpo: { motivo } }),
 
   reporte: (id: number, senal?: AbortSignal) => peticion<Reporte>('GET', `/api/eventos/${id}/reportes`, { senal }),
+
+  /**
+   * Sube o reemplaza la portada (multipart, campo `imagen`). La API valida el tipo por su contenido, la pasa por
+   * la moderación configurada y la guarda en su almacén; el cliente nunca recibe credenciales del almacén.
+   */
+  subirImagen: (id: number, imagen: Blob, nombreArchivo = 'portada.jpg') => {
+    const formulario = new FormData();
+    formulario.append('imagen', imagen, nombreArchivo);
+    return peticion<Evento>('POST', `/api/eventos/${id}/imagen`, { formulario, tiempoLimiteMs: 60_000 });
+  },
+
+  quitarImagen: (id: number) => peticion<Evento>('DELETE', `/api/eventos/${id}/imagen`),
 };

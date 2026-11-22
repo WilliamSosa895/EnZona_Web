@@ -14,7 +14,7 @@ const MENSAJES: Record<string, string> = {
   NO_AUTENTICADO: 'Tu sesión terminó. Vuelve a iniciar sesión.',
   CREDENCIALES_INVALIDAS: 'Credenciales inválidas. Revisa tu correo o CURP y tu contraseña.',
   ACCESO_DENEGADO: 'No tienes permiso para realizar esta acción.',
-  CUENTA_PENDIENTE: 'Tu cuenta aún no está verificada. Ingresa el código que enviamos a tu correo.',
+  CUENTA_PENDIENTE: 'Tu cuenta aún no está verificada. Escribe el código que te enviamos por correo.',
   CUENTA_BLOQUEADA: 'Tu cuenta está bloqueada. Escríbenos a soporte@enzona.mx.',
   NO_ENCONTRADO: 'No encontramos lo que buscas. Puede que ya no exista.',
   CORREO_REGISTRADO: 'Ese correo ya está registrado. Inicia sesión.',
@@ -31,9 +31,11 @@ const MENSAJES: Record<string, string> = {
   DEMASIADOS_INTENTOS: 'Demasiados intentos. Espera unos minutos e intenta de nuevo.',
   ERROR_INTERNO: 'Ocurrió un error inesperado. Intenta de nuevo en unos momentos.',
   SERVICIO_EXTERNO_NO_DISPONIBLE: 'Un servicio externo no respondió. Intenta más tarde.',
+  IMAGEN_NO_PERMITIDA: 'La imagen no cumple las normas de la comunidad. Elige otra.',
 };
 
-const CON_DETALLE = new Set(['REGLA_NEGOCIO', 'POLITICA_MODIFICACION', 'ROL_EN_USO']);
+// La moderación de portadas explica en `detail` por qué rechazó la imagen (desnudez, violencia…).
+const CON_DETALLE = new Set(['REGLA_NEGOCIO', 'POLITICA_MODIFICACION', 'ROL_EN_USO', 'IMAGEN_NO_PERMITIDA']);
 
 /** Mensaje legible para cualquier error (de la API o inesperado). */
 export function mensajeDeError(error: unknown): string {

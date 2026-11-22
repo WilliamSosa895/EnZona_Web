@@ -2,56 +2,72 @@ import { useId, useMemo, useState, type KeyboardEvent } from 'react';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { MdSearch } from 'react-icons/md';
 import { administracionApi } from '@/api/administracion';
+import { eventosApi } from '@/api/eventos';
 import type { EstadoEvento, EstadoUsuario, Evento, UsuarioAdmin } from '@/api/tipos';
 import { claves } from '@/app/consultas';
 import { NOMBRE_ROL } from '@/auth/roles';
 import { useSesion } from '@/auth/useSesion';
-import { corto } from '@/lib/fechas';
+import { corto, yaPaso } from '@/lib/fechas';
 import { mensajeDeError } from '@/lib/errores';
 import { useDemora } from '@/lib/useDemora';
 import { DialogoCancelarEvento } from '@/features/organizador/DialogoCancelarEvento';
 import { vendidosDe } from '@/features/organizador/calculos';
 import {
   Aviso,
+  Boton,
   BotonSecundario,
   BotonTexto,
   Campo,
   ChipFiltro,
+  Dialogo,
   EstadoVacio,
   EtiquetaEstadoEvento,
   IndicadorCarga,
   Pagina,
+  Portada,
 } from '@/ui';
+import { ResumenAdmin } from './ResumenAdmin';
 import estilos from './Admin.module.css';
 
 const TAMANO = 20;
 
-type Pestana = 'usuarios' | 'eventos';
+type Pestana = 'resumen' | 'usuarios' | 'eventos';
+
+const PESTANAS: { clave: Pestana; texto: string }[] = [
+  { clave: 'resumen', texto: 'Resumen' },
+  { clave: 'usuarios', texto: 'Usuarios' },
+  { clave: 'eventos', texto: 'Eventos' },
+];
 
 /**
- * Administración de la plataforma (RF-18, AdminScreen en Android): usuarios y eventos. La asignación de roles
- * y el cambio de asientos desde aquí quedaron fuera del alcance de la API (docs/COHERENCIA_APP_ANDROID.md).
+ * Administración de la plataforma (RF-18, AdminScreen en Android): resumen con indicadores y gráficas, usuarios y
+ * eventos. La asignación de roles y el cambio de asientos desde aquí quedaron fuera del alcance de la API
+ * (docs/COHERENCIA_APP_ANDROID.md).
  */
 export default function AdminPage() {
-  const [pestana, setPestana] = useState<Pestana>('usuarios');
+  const [pestana, setPestana] = useState<Pestana>('resumen');
   const id = useId();
-  const pestanas: { clave: Pestana; texto: string }[] = [
-    { clave: 'usuarios', texto: 'Usuarios' },
-    { clave: 'eventos', texto: 'Eventos' },
-  ];
 
-  // Navegación de pestañas con flechas (patrón WAI-ARIA Tabs).
+  // Navegación de pestañas con flechas, Inicio y Fin (patrón WAI-ARIA Tabs).
   function alTeclear(e: KeyboardEvent) {
-    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
-    const siguiente = pestana === 'usuarios' ? 'eventos' : 'usuarios';
+    const actual = PESTANAS.findIndex((p) => p.clave === pestana);
+    const destino = {
+      ArrowRight: (actual + 1) % PESTANAS.length,
+      ArrowLeft: (actual - 1 + PESTANAS.length) % PESTANAS.length,
+      Home: 0,
+      End: PESTANAS.length - 1,
+    }[e.key];
+    if (destino === undefined) return;
+    e.preventDefault();
+    const siguiente = PESTANAS[destino].clave;
     setPestana(siguiente);
     document.getElementById(`${id}-${siguiente}`)?.focus();
   }
 
   return (
-    <Pagina titulo="Administración" subtitulo="Usuarios y eventos de la plataforma">
+    <Pagina titulo="Administración" subtitulo="Resumen, usuarios y eventos de la plataforma">
       <div role="tablist" aria-label="Secciones de administración" className={estilos.pestanas}>
-        {pestanas.map((p) => (
+        {PESTANAS.map((p) => (
           <button
             key={p.clave}
             id={`${id}-${p.clave}`}
@@ -69,7 +85,7 @@ export default function AdminPage() {
         ))}
       </div>
       <div role="tabpanel" id={`${id}-panel-${pestana}`} aria-labelledby={`${id}-${pestana}`} className={estilos.panel}>
-        {pestana === 'usuarios' ? <Usuarios /> : <Eventos />}
+        {pestana === 'resumen' ? <ResumenAdmin /> : pestana === 'usuarios' ? <Usuarios /> : <Eventos />}
       </div>
     </Pagina>
   );
@@ -155,9 +171,22 @@ function TarjetaUsuario({ usuario }: { usuario: UsuarioAdmin }) {
   const consultas = useQueryClient();
   const esPropio = yo?.id === usuario.id;
   const bloqueado = usuario.estado === 'BLOQUEADO';
+  const [confirmandoActivacion, setConfirmandoActivacion] = useState(false);
+  const actualizar = () => {
+    void consultas.invalidateQueries({ queryKey: ['admin', 'usuarios'] });
+    void consultas.invalidateQueries({ queryKey: ['admin', 'estadisticas'] });
+  };
   const cambio = useMutation({
     mutationFn: () => administracionApi.cambiarEstado(usuario.id, bloqueado ? 'ACTIVO' : 'BLOQUEADO'),
-    onSuccess: () => void consultas.invalidateQueries({ queryKey: ['admin', 'usuarios'] }),
+    onSuccess: actualizar,
+  });
+  // Cuando el correo de verificación no llegó, la administración activa la cuenta sin código.
+  const activacion = useMutation({
+    mutationFn: () => administracionApi.darPorVerificada(usuario.id),
+    onSuccess: () => {
+      setConfirmandoActivacion(false);
+      actualizar();
+    },
   });
 
   return (
@@ -183,18 +212,36 @@ function TarjetaUsuario({ usuario }: { usuario: UsuarioAdmin }) {
       </p>
       {esPropio ? (
         <p className={estilos.apoyo}>Es tu propia cuenta: no puedes bloquearte.</p>
+      ) : usuario.estado === 'PENDIENTE' ? (
+        <BotonTexto onClick={() => setConfirmandoActivacion(true)}>Activar sin código</BotonTexto>
       ) : (
-        usuario.estado !== 'PENDIENTE' && (
-          <BotonTexto
-            tono={bloqueado ? 'enlace' : 'peligro'}
-            disabled={cambio.isPending}
-            onClick={() => cambio.mutate()}
-          >
-            {cambio.isPending ? 'Guardando…' : bloqueado ? 'Desbloquear cuenta' : 'Bloquear cuenta'}
-          </BotonTexto>
-        )
+        <BotonTexto tono={bloqueado ? 'enlace' : 'peligro'} disabled={cambio.isPending} onClick={() => cambio.mutate()}>
+          {cambio.isPending ? 'Guardando…' : bloqueado ? 'Desbloquear cuenta' : 'Bloquear cuenta'}
+        </BotonTexto>
       )}
       {cambio.isError && <Aviso tono="error" texto={mensajeDeError(cambio.error)} anunciar />}
+      {confirmandoActivacion && (
+        <Dialogo
+          titulo="¿Activar la cuenta sin código?"
+          onCerrar={activacion.isPending ? undefined : () => setConfirmandoActivacion(false)}
+          acciones={
+            <>
+              <BotonTexto tono="neutro" disabled={activacion.isPending} onClick={() => setConfirmandoActivacion(false)}>
+                Cancelar
+              </BotonTexto>
+              <Boton cargando={activacion.isPending} onClick={() => activacion.mutate()}>
+                Activar cuenta
+              </Boton>
+            </>
+          }
+        >
+          <p>
+            {usuario.nombre} ({usuario.correo}) no terminó la verificación. Úsalo solo cuando el código no le llegó y
+            confirmaste que el correo es suyo: la cuenta quedará activa y el correo, verificado.
+          </p>
+          {activacion.isError && <Aviso tono="error" texto={mensajeDeError(activacion.error)} anunciar />}
+        </Dialogo>
+      )}
     </article>
   );
 }
@@ -263,6 +310,18 @@ function TarjetaEvento({ evento, organizador }: { evento: Evento; organizador: s
   const [cancelando, setCancelando] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
   const cancelable = evento.estado === 'PUBLICADO' || evento.estado === 'BORRADOR';
+  // Un evento que ya comenzó no se cancela: la API lo pasa a REALIZADO al terminar.
+  const yaComenzo = yaPaso(evento.fechaHoraInicio);
+  // Red de seguridad humana tras la moderación automática: el administrador retira una portada inapropiada.
+  const quitarPortada = useMutation({
+    mutationFn: () => eventosApi.quitarImagen(evento.id),
+    onSuccess: (e) => {
+      consultas.setQueryData(claves.evento(e.id), e);
+      setAviso('Se quitó la portada. El evento muestra ahora el panel de su categoría.');
+      void consultas.invalidateQueries({ queryKey: ['admin', 'eventos'] });
+      void consultas.invalidateQueries({ queryKey: ['eventos'] });
+    },
+  });
 
   return (
     <article className={estilos.tarjeta} aria-label={evento.nombre}>
@@ -290,17 +349,37 @@ function TarjetaEvento({ evento, organizador }: { evento: Evento; organizador: s
         </div>
         <EtiquetaEstadoEvento estado={evento.estado} />
       </div>
+      {evento.imagenUrl && (
+        <div className={estilos.portada}>
+          <Portada
+            nombre={evento.nombre}
+            categoria={evento.categoria}
+            fecha={evento.fechaHoraInicio}
+            imagenUrl={evento.imagenUrl}
+            mostrarFecha={false}
+          />
+          <BotonTexto tono="peligro" disabled={quitarPortada.isPending} onClick={() => quitarPortada.mutate()}>
+            {quitarPortada.isPending ? 'Quitando portada…' : 'Quitar portada'}
+          </BotonTexto>
+          {quitarPortada.isError && <Aviso tono="error" texto={mensajeDeError(quitarPortada.error)} anunciar />}
+        </div>
+      )}
       {evento.estado === 'CANCELADO' && (
         <p className={estilos.cancelado}>
           Cancelado{evento.fechaCancelacion ? ` el ${corto(evento.fechaCancelacion)}` : ''}
           {evento.motivoCancelacion ? ` · ${evento.motivoCancelacion}` : ''}
         </p>
       )}
-      {cancelable && (
-        <BotonTexto tono="peligro" onClick={() => setCancelando(true)}>
-          Cancelar evento
-        </BotonTexto>
-      )}
+      {cancelable &&
+        (yaComenzo ? (
+          <p className={estilos.apoyo}>
+            El evento ya comenzó. No se puede cancelar; solo puede quedar como finalizado.
+          </p>
+        ) : (
+          <BotonTexto tono="peligro" onClick={() => setCancelando(true)}>
+            Cancelar evento
+          </BotonTexto>
+        ))}
       {aviso && <Aviso tono="exito" texto={aviso} anunciar />}
     </article>
   );

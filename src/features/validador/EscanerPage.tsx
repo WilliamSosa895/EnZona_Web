@@ -1,62 +1,96 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
-import { useMutation, useQuery } from '@tanstack/react-query';
-import { MdCameraAlt, MdCancel, MdCheckCircle, MdCloudOff, MdKeyboard } from 'react-icons/md';
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type FormEvent } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import {
+  MdCached,
+  MdCameraAlt,
+  MdCancel,
+  MdCheckCircle,
+  MdCloud,
+  MdCloudOff,
+  MdExpandLess,
+  MdExpandMore,
+  MdFlashlightOff,
+  MdFlashlightOn,
+  MdKeyboard,
+} from 'react-icons/md';
 import { administracionApi } from '@/api/administracion';
+import { ApiError } from '@/api/http';
 import { eventosApi } from '@/api/eventos';
 import { validacionApi } from '@/api/validacion';
-import type { Evento, MotivoRechazo, ValidacionRespuesta } from '@/api/tipos';
+import type { Evento, SincronizacionRespuesta } from '@/api/tipos';
 import { tieneRol } from '@/auth/roles';
 import { useSesion } from '@/auth/useSesion';
 import { corto, hora } from '@/lib/fechas';
 import { esCodigo, mensajeDeError } from '@/lib/errores';
 import { leerPreferencias } from '@/lib/preferencias';
 import { useMantenerPantalla } from '@/features/boletos/useMantenerPantalla';
-import { Aviso, Boton, BotonTexto, Campo, IndicadorCarga, Pagina, Selector } from '@/ui';
+import { Aviso, Boton, BotonTexto, Campo, Dialogo, IndicadorCarga, Pagina, Selector } from '@/ui';
 import { CamaraQr } from './CamaraQr';
+import {
+  admitidosSinConexion,
+  codigoDe,
+  guardarBitacora,
+  guardarPendientes,
+  leerBitacora,
+  leerPendientes,
+  manifiestos,
+  registrosSincronizados,
+  resultadoEnLinea,
+  resumirSincronizacion,
+  validarSinConexion,
+  type Pendiente,
+  type Registro,
+  type Resultado,
+} from './validacion';
 import estilos from './Validador.module.css';
 
 const CLAVE_EVENTO = 'enzona.validador.evento';
-const CLAVE_BITACORA = 'enzona.validador.bitacora';
+/** Un acceso permitido se cierra solo para no frenar la fila; un rechazo espera a que lo vean. */
+const SEGUNDOS_RESULTADO_PERMITIDO = 3;
 
-const TITULO_RECHAZO: Record<MotivoRechazo, string> = {
-  FORMATO_INVALIDO: 'Código no válido',
-  BOLETO_INEXISTENTE: 'Boleto no encontrado',
-  FIRMA_INVALIDA: 'Boleto falso',
-  OTRO_EVENTO: 'Boleto de otro evento',
-  EVENTO_CANCELADO: 'Evento cancelado',
-  YA_UTILIZADO: 'Boleto ya utilizado',
-  CANCELADO: 'Boleto cancelado',
-  EXPIRADO: 'Boleto expirado',
+function leerEventoElegido(): number | null {
+  try {
+    const valor = Number(sessionStorage.getItem(CLAVE_EVENTO));
+    return Number.isInteger(valor) && valor > 0 ? valor : null;
+  } catch {
+    return null;
+  }
+}
+
+function guardarEventoElegido(id: number) {
+  try {
+    sessionStorage.setItem(CLAVE_EVENTO, String(id));
+  } catch {
+    /* sin almacenamiento: dura mientras la página esté abierta */
+  }
+}
+
+const suscribirRed = (alCambiar: () => void) => {
+  window.addEventListener('online', alCambiar);
+  window.addEventListener('offline', alCambiar);
+  return () => {
+    window.removeEventListener('online', alCambiar);
+    window.removeEventListener('offline', alCambiar);
+  };
 };
 
-interface Registro {
-  codigo: string;
-  permitido: boolean;
-  detalle: string;
-  hora: string;
-}
-
-function leer<T>(clave: string, porDefecto: T): T {
-  try {
-    const crudo = sessionStorage.getItem(clave);
-    return crudo ? (JSON.parse(crudo) as T) : porDefecto;
-  } catch {
-    return porDefecto;
-  }
-}
-
-function guardar(clave: string, valor: unknown) {
-  try {
-    sessionStorage.setItem(clave, JSON.stringify(valor));
-  } catch {
-    /* sin almacenamiento: solo dura mientras la página esté abierta */
-  }
+/** ¿El navegador tiene red? Solo informa: la API es la que decide si una validación en línea es posible. */
+function useEnLinea() {
+  return useSyncExternalStore(
+    suscribirRed,
+    () => navigator.onLine,
+    () => true,
+  );
 }
 
 /**
- * Validación de acceso en la puerta (RF-15, ScannerScreen en Android). La API comprueba la firma del QR,
- * marca el boleto como usado una sola vez y registra la validación. La validación sin conexión (RNF-08) es
- * exclusiva de la aplicación Android, que descarga la lista del evento.
+ * Pantalla del personal de acceso (RF-15, ScannerScreen en Android), pensada para la puerta de un evento: la
+ * cámara ocupa casi toda la pantalla, el resultado se ve de lejos (toda la zona en verde o rojo, con vibración) y
+ * lo demás queda en una fila de controles cortos: evento, conexión, envíos pendientes y contadores.
+ *
+ * Con conexión, la API verifica la firma HMAC (RNF-02), marca el boleto como usado (un solo uso) y registra la
+ * validación. Sin conexión (RNF-08, CP-14) se descarga antes el manifiesto del evento, cada escaneo se compara con
+ * él y queda pendiente; «Enviar» los manda a la API cuando vuelve la red.
  */
 export default function EscanerPage() {
   const { usuario } = useSesion();
@@ -91,18 +125,15 @@ export default function EscanerPage() {
     return [...todos.values()].sort((a, b) => a.fechaHoraInicio.localeCompare(b.fechaHoraInicio));
   }, [publicos.data, propios.data, deAdmin.data]);
 
-  const [eventoId, setEventoId] = useState<number | null>(() => leer<number | null>(CLAVE_EVENTO, null));
-  const elegido = eventos.find((e) => e.id === eventoId) ?? null;
+  const [eventoId, setEventoId] = useState<number | null>(leerEventoElegido);
+  const elegido = eventos.find((e) => e.id === eventoId) ?? eventos[0] ?? null;
 
   return (
-    <Pagina titulo="Validar acceso" subtitulo="Escanea el código QR del asistente" angosta>
+    <Pagina angosta>
+      <h1 className="sr-only">Validar acceso</h1>
       <div className={estilos.pila}>
-        <Aviso
-          icono={<MdCloudOff />}
-          texto="La validación sin conexión está disponible en la aplicación Android, que descarga la lista del evento. En la web se valida en línea."
-        />
         {publicos.isPending ? (
-          <IndicadorCarga texto="Cargando eventos…" />
+          <IndicadorCarga texto="Cargando tus eventos…" />
         ) : publicos.isError ? (
           <Aviso
             tono="error"
@@ -110,190 +141,438 @@ export default function EscanerPage() {
             textoAccion="Reintentar"
             onAccion={() => void publicos.refetch()}
           />
+        ) : eventos.length === 0 ? (
+          <>
+            <h2 className={estilos.titulo}>Validar acceso</h2>
+            <p className={estilos.apoyo}>
+              Todavía no tienes eventos asignados. El organizador debe designarte como personal de acceso de su evento.
+            </p>
+          </>
         ) : (
           <Selector
-            etiqueta="Evento en la puerta"
-            marcador="Elige el evento"
+            etiqueta="Evento"
             opciones={eventos.map((e) => ({ valor: e.id, texto: `${e.nombre} · ${corto(e.fechaHoraInicio)}` }))}
             valor={elegido?.id ?? null}
             onCambio={(id) => {
               setEventoId(id);
-              guardar(CLAVE_EVENTO, id);
+              guardarEventoElegido(id);
             }}
           />
         )}
-        {elegido ? (
-          <Escaner key={elegido.id} evento={elegido} />
-        ) : (
-          !publicos.isPending && (
-            <p className={estilos.apoyo}>
-              Elige el evento en el que estás en la puerta. Solo podrás validar los eventos para los que el organizador
-              te designó como personal de acceso.
-            </p>
-          )
-        )}
+        {elegido && usuario && <Puerta key={elegido.id} evento={elegido} usuarioId={usuario.id} />}
       </div>
     </Pagina>
   );
 }
 
-function Escaner({ evento }: { evento: Evento }) {
-  const [resultado, setResultado] = useState<ValidacionRespuesta | null>(null);
-  const [manual, setManual] = useState(false);
-  const [codigo, setCodigo] = useState('');
-  const [errorCamara, setErrorCamara] = useState<string | null>(null);
-  const [bitacora, setBitacora] = useState<Registro[]>(() => leer<Registro[]>(CLAVE_BITACORA, []));
+function Puerta({ evento, usuarioId }: { evento: Evento; usuarioId: number }) {
   useMantenerPantalla(true);
+  const enLinea = useEnLinea();
+  const [sinConexion, setSinConexion] = useState(false);
+  const [pendientes, setPendientes] = useState<Pendiente[]>(() => leerPendientes(usuarioId));
+  const [bitacora, setBitacora] = useState<Registro[]>(() => leerBitacora(usuarioId));
+  const [resultado, setResultado] = useState<Resultado | null>(null);
+  const [enCurso, setEnCurso] = useState(false);
+  const [avisoModo, setAvisoModo] = useState<string | null>(null);
+  const [errorModo, setErrorModo] = useState<string | null>(null);
+  const [linterna, setLinterna] = useState(false);
+  const [conLinterna, setConLinterna] = useState(false);
+  const [errorCamara, setErrorCamara] = useState<string | null>(null);
+  const [intentoCamara, setIntentoCamara] = useState(0);
+  const [escribiendo, setEscribiendo] = useState(false);
+  const [verBitacora, setVerBitacora] = useState(false);
 
-  useEffect(() => guardar(CLAVE_BITACORA, bitacora), [bitacora]);
+  useEffect(() => guardarPendientes(usuarioId, pendientes), [usuarioId, pendientes]);
+  useEffect(() => guardarBitacora(usuarioId, bitacora), [usuarioId, bitacora]);
 
-  const validacion = useMutation({
-    mutationFn: (qr: string) => validacionApi.validar(evento.id, qr),
-    onSuccess: (r, qr) => {
-      setResultado(r);
-      setCodigo('');
-      const permitido = r.resultado === 'PERMITIDO';
-      // Vibración distinta para permitir o rechazar, útil con ruido en la puerta.
-      navigator.vibrate?.(permitido ? 120 : [80, 60, 80, 60, 80]);
-      setBitacora((b) =>
-        [
-          {
-            codigo: r.codigo ?? (qr.split('.')[0].slice(0, 24) || 'Código vacío'),
-            permitido,
-            detalle: permitido ? 'Permitido' : r.motivo ? TITULO_RECHAZO[r.motivo] : 'Rechazado',
-            hora: hora(new Date()),
-          },
-          ...b,
-        ].slice(0, 6),
+  // Un acceso permitido se cierra solo a los pocos segundos.
+  useEffect(() => {
+    if (!resultado?.permitido) return;
+    const temporizador = window.setTimeout(() => setResultado(null), SEGUNDOS_RESULTADO_PERMITIDO * 1000);
+    return () => window.clearTimeout(temporizador);
+  }, [resultado]);
+
+  function mostrar(r: Resultado) {
+    setResultado(r);
+    // Se siente aunque no se mire la pantalla: vibración distinta para permitir o rechazar.
+    navigator.vibrate?.(r.permitido ? 120 : [80, 60, 80, 60, 80]);
+  }
+
+  async function validar(contenido: string) {
+    const qr = contenido.trim();
+    if (!qr || resultado || enCurso) return; // ya hay un resultado en pantalla o una validación en curso
+    setErrorModo(null);
+    const ahora = new Date().toISOString();
+
+    if (sinConexion) {
+      const manifiesto = manifiestos.get(evento.id);
+      if (!manifiesto) {
+        setErrorModo('Descarga primero el manifiesto del evento (con conexión) para validar sin conexión.');
+        return;
+      }
+      const r = validarSinConexion(qr, manifiesto, admitidosSinConexion(pendientes, evento.id));
+      setPendientes((lista) => [
+        ...lista,
+        { eventoId: evento.id, qr, fechaHora: ahora, permitido: r.permitido, titulo: r.titulo },
+      ]);
+      mostrar(r);
+      return;
+    }
+
+    setEnCurso(true);
+    try {
+      const r = resultadoEnLinea(await validacionApi.validar(evento.id, qr));
+      setBitacora((lista) => [
+        {
+          eventoId: evento.id,
+          codigo: r.codigo ?? codigoDe(qr) ?? qr.slice(0, 24),
+          permitido: r.permitido,
+          titulo: r.titulo,
+          fechaHora: ahora,
+          sinConexion: false,
+          sincronizado: true,
+        },
+        ...lista,
+      ]);
+      mostrar(r);
+    } catch (e) {
+      setErrorModo(
+        esCodigo(e, 'ACCESO_DENEGADO')
+          ? 'No estás designado para este evento. Pide al organizador que te agregue como personal de acceso o elige otro evento.'
+          : `${mensajeDeError(e).replace(/\.$/, '')}.` +
+              (e instanceof ApiError && e.status === 0 ? ' Si no hay red en el acceso, activa «Sin conexión».' : ''),
       );
-    },
-  });
-
-  function validar(qr: string) {
-    if (resultado || validacion.isPending) return; // ya hay un resultado en pantalla
-    validacion.mutate(qr.trim());
+    } finally {
+      setEnCurso(false);
+    }
   }
 
-  function siguiente() {
-    setResultado(null);
-    validacion.reset();
+  async function cambiarConexion(sinRed: boolean) {
+    setErrorModo(null);
+    if (!sinRed) {
+      setSinConexion(false);
+      setAvisoModo(null);
+      return;
+    }
+    // El manifiesto se descarga con conexión, antes de quedarse sin red.
+    setEnCurso(true);
+    try {
+      const manifiesto = await validacionApi.manifiesto(evento.id);
+      manifiestos.set(evento.id, manifiesto);
+      const vigentes = manifiesto.boletos.filter((b) => b.estado === 'VALIDO').length;
+      setSinConexion(true);
+      setAvisoModo(
+        `Listo: ${vigentes === 1 ? '1 boleto guardado' : `${vigentes} boletos guardados`} en este equipo. Puedes seguir sin internet.`,
+      );
+    } catch (e) {
+      setErrorModo(
+        esCodigo(e, 'ACCESO_DENEGADO')
+          ? 'No estás designado para este evento: no se puede descargar su lista de boletos.'
+          : mensajeDeError(e),
+      );
+    } finally {
+      setEnCurso(false);
+    }
   }
 
-  const sinPermiso = esCodigo(validacion.error, 'ACCESO_DENEGADO');
+  async function enviarPendientes() {
+    setErrorModo(null);
+    setEnCurso(true);
+    const cola = pendientes;
+    const respuestas: SincronizacionRespuesta[] = [];
+    let restantes = cola;
+    try {
+      for (const id of [...new Set(cola.map((p) => p.eventoId))]) {
+        const delEvento = cola.filter((p) => p.eventoId === id).sort((a, b) => a.fechaHora.localeCompare(b.fechaHora));
+        const respuesta = await validacionApi.sincronizar(
+          id,
+          delEvento.map((p) => ({ qr: p.qr, fechaHora: p.fechaHora })),
+        );
+        respuestas.push(respuesta);
+        // Lo sincronizado pasa a «Últimos accesos» con el veredicto del servidor y sale de la cola.
+        const registros = registrosSincronizados(delEvento, respuesta).reverse();
+        setBitacora((lista) => [...registros, ...lista]);
+        restantes = restantes.filter((p) => p.eventoId !== id);
+        setPendientes(restantes);
+        manifiestos.delete(id);
+      }
+      const r = resumirSincronizacion(cola.length, respuestas);
+      setAvisoModo(
+        `Enviadas ${r.enviadas}: ${r.permitidas} entraron y ${r.rechazadas} rechazadas` +
+          (r.duplicadas > 0 ? ` (${r.duplicadas} ya habían entrado).` : '.'),
+      );
+    } catch (e) {
+      setErrorModo(mensajeDeError(e));
+    } finally {
+      setEnCurso(false);
+    }
+  }
+
+  // «Últimos accesos»: primero lo pendiente de enviar, después lo ya resuelto por el servidor.
+  const registros: Registro[] = [
+    ...pendientes
+      .filter((p) => p.eventoId === evento.id)
+      .reverse()
+      .map((p) => ({
+        eventoId: p.eventoId,
+        codigo: codigoDe(p.qr) ?? p.qr.slice(0, 24),
+        permitido: p.permitido,
+        titulo: p.titulo,
+        fechaHora: p.fechaHora,
+        sinConexion: true,
+        sincronizado: false,
+      })),
+    ...bitacora.filter((r) => r.eventoId === evento.id),
+  ];
+  const entraron = registros.filter((r) => r.permitido).length;
+  const rechazados = registros.length - entraron;
 
   return (
     <>
-      {sinPermiso && (
-        <Aviso
-          tono="error"
-          titulo="No estás designado para este evento"
-          texto="Pide al organizador que te agregue como personal de acceso, o elige otro evento."
-          anunciar
-        />
-      )}
-      {validacion.isError && !sinPermiso && (
-        <Aviso
-          tono="error"
-          texto={mensajeDeError(validacion.error)}
-          textoAccion="Entendido"
-          onAccion={() => validacion.reset()}
-          anunciar
-        />
-      )}
-
-      {resultado ? (
-        <TarjetaResultado resultado={resultado} onContinuar={siguiente} />
-      ) : manual || errorCamara ? (
-        <form
-          className={estilos.manual}
-          onSubmit={(e: FormEvent) => {
-            e.preventDefault();
-            if (codigo.trim()) validar(codigo);
-          }}
+      <div className={estilos.estado}>
+        <button
+          type="button"
+          className={[estilos.chip, sinConexion ? estilos.chipSinConexion : ''].join(' ')}
+          aria-pressed={sinConexion}
+          disabled={enCurso}
+          onClick={() => void cambiarConexion(!sinConexion)}
         >
-          <h2 className={estilos.subtitulo}>Captura manual</h2>
-          {errorCamara && <Aviso tono="aviso" texto={errorCamara} />}
-          <p className={estilos.apoyo}>Útil cuando la cámara falla. Escribe o pega el contenido del QR del boleto.</p>
-          <Campo
-            etiqueta="Contenido del QR (EZ-0000-XXXX.firma)"
-            valor={codigo}
-            onCambio={setCodigo}
-            autoComplete="off"
-            autoCapitalize="off"
-            spellCheck={false}
-          />
-          <Boton type="submit" disabled={!codigo.trim()} cargando={validacion.isPending}>
-            Validar código
-          </Boton>
-          {!errorCamara && (
-            <BotonTexto tono="neutro" icono={<MdCameraAlt />} onClick={() => setManual(false)}>
-              Volver a la cámara
-            </BotonTexto>
-          )}
-        </form>
-      ) : (
-        <>
-          <CamaraQr activa={!resultado && !validacion.isPending} onCodigo={validar} onError={setErrorCamara} />
-          <p className={estilos.centrado}>{validacion.isPending ? 'Validando…' : 'Apunta al código QR del boleto'}</p>
-          <BotonTexto tono="neutro" icono={<MdKeyboard />} onClick={() => setManual(true)}>
-            Capturar código manualmente
-          </BotonTexto>
-        </>
+          {sinConexion ? <MdCloudOff aria-hidden="true" /> : <MdCloud aria-hidden="true" />}
+          {sinConexion ? 'Sin conexión' : 'Con internet'}
+        </button>
+        {pendientes.length > 0 && (
+          <button
+            type="button"
+            className={estilos.chip}
+            disabled={sinConexion || enCurso}
+            onClick={() => void enviarPendientes()}
+          >
+            <MdCached aria-hidden="true" className={estilos.iconoEnviar} />
+            Enviar {pendientes.length}
+          </button>
+        )}
+        <span className={estilos.contadores}>
+          <Contador valor={entraron} etiqueta="entraron" tono="exito" />
+          <Contador valor={rechazados} etiqueta="rechazados" tono="error" />
+        </span>
+      </div>
+      {!enLinea && !sinConexion && (
+        <p className={estilos.textoError} role="status">
+          Este equipo no tiene red. Para seguir validando, activa «Sin conexión» cuando vuelva la señal, o valida en
+          línea al recuperarla.
+        </p>
+      )}
+      {avisoModo && (
+        <p className={estilos.textoExito} role="status">
+          {avisoModo}
+        </p>
+      )}
+      {errorModo && (
+        <p className={estilos.textoError} role="alert">
+          {errorModo}
+        </p>
       )}
 
-      {bitacora.length > 0 && (
-        <section aria-labelledby="titulo-bitacora">
-          <h2 id="titulo-bitacora" className={estilos.subtitulo}>
-            Últimos accesos
-          </h2>
-          <ul className={estilos.bitacora}>
-            {bitacora.map((r, i) => (
-              <li key={`${r.codigo}-${i}`}>
-                <span className={r.permitido ? estilos.puntoOk : estilos.puntoError} aria-hidden="true" />
-                <div>
-                  <strong>{r.codigo}</strong>
-                  <span>
-                    {r.detalle} · {r.hora}
-                  </span>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </section>
+      <div className={estilos.zona}>
+        {errorCamara ? (
+          <SinCamara
+            mensaje={errorCamara}
+            onReintentar={() => {
+              setErrorCamara(null);
+              setIntentoCamara((n) => n + 1);
+            }}
+          />
+        ) : (
+          <>
+            <CamaraQr
+              key={intentoCamara}
+              activa={!resultado && !enCurso}
+              linterna={linterna}
+              onCodigo={(qr) => void validar(qr)}
+              onError={setErrorCamara}
+              onLinternaDisponible={setConLinterna}
+            />
+            {conLinterna && (
+              <button
+                type="button"
+                className={estilos.linterna}
+                aria-pressed={linterna}
+                aria-label={linterna ? 'Apagar linterna' : 'Encender linterna'}
+                onClick={() => setLinterna((l) => !l)}
+              >
+                {linterna ? <MdFlashlightOn aria-hidden="true" /> : <MdFlashlightOff aria-hidden="true" />}
+              </button>
+            )}
+            <span className={estilos.indicacion} aria-hidden="true">
+              Apunta al código del boleto
+            </span>
+          </>
+        )}
+        {enCurso && !resultado && (
+          <div className={estilos.revisando}>
+            <IndicadorCarga texto={sinConexion ? 'Un momento…' : 'Revisando el boleto…'} />
+          </div>
+        )}
+        {resultado && <PanelResultado resultado={resultado} onContinuar={() => setResultado(null)} />}
+      </div>
+
+      <div className={estilos.acciones}>
+        <BotonTexto
+          tono="neutro"
+          icono={<MdKeyboard />}
+          disabled={!!resultado || enCurso}
+          onClick={() => setEscribiendo(true)}
+        >
+          Escribir código
+        </BotonTexto>
+        <BotonTexto
+          tono="neutro"
+          aria-expanded={verBitacora}
+          aria-controls="ultimos-accesos"
+          onClick={() => setVerBitacora((v) => !v)}
+        >
+          Últimos accesos
+          {verBitacora ? <MdExpandLess aria-hidden="true" /> : <MdExpandMore aria-hidden="true" />}
+        </BotonTexto>
+      </div>
+      {verBitacora && <UltimosAccesos registros={registros.slice(0, 5)} />}
+
+      {escribiendo && (
+        <DialogoEscribirCodigo
+          onCerrar={() => setEscribiendo(false)}
+          onValidar={(codigo) => {
+            setEscribiendo(false);
+            void validar(codigo);
+          }}
+        />
       )}
     </>
   );
 }
 
-function TarjetaResultado({ resultado, onContinuar }: { resultado: ValidacionRespuesta; onContinuar: () => void }) {
-  const boton = useRef<HTMLButtonElement>(null);
-  // El foco pasa a «Escanear siguiente»: con teclado o lector de pantalla se continúa sin buscar el botón.
-  useEffect(() => boton.current?.focus(), []);
-  const permitido = resultado.resultado === 'PERMITIDO';
-  const titulo = permitido
-    ? 'Acceso permitido'
-    : resultado.motivo
-      ? TITULO_RECHAZO[resultado.motivo]
-      : 'Acceso rechazado';
-  const detalle = permitido
-    ? (resultado.tipoBoleto ?? 'Boleto válido')
-    : resultado.motivo === 'YA_UTILIZADO' && resultado.fechaUso
-      ? `${resultado.mensaje}. Se usó el ${corto(resultado.fechaUso)}.`
-      : resultado.mensaje;
+function Contador({ valor, etiqueta, tono }: { valor: number; etiqueta: string; tono: 'exito' | 'error' }) {
   return (
+    <span className={estilos.contador}>
+      <strong className={tono === 'exito' ? estilos.valorExito : estilos.valorError}>{valor}</strong>
+      <span>{etiqueta}</span>
+    </span>
+  );
+}
+
+/**
+ * Resultado a toda la zona de la cámara: verde «PUEDE PASAR» o rojo «NO PUEDE PASAR», legible a un metro.
+ * Tocar en cualquier parte vuelve a la cámara.
+ */
+function PanelResultado({ resultado, onContinuar }: { resultado: Resultado; onContinuar: () => void }) {
+  const boton = useRef<HTMLButtonElement>(null);
+  // El foco pasa a «Siguiente»: con teclado o lector de pantalla se continúa sin buscar el botón.
+  useEffect(() => boton.current?.focus(), []);
+  const { permitido } = resultado;
+  return (
+    // El fondo es un atajo táctil; con teclado se usa el botón «Siguiente».
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions
     <section
       className={[estilos.resultado, permitido ? estilos.resultadoOk : estilos.resultadoError].join(' ')}
       role="status"
       aria-live="assertive"
+      aria-label={`${permitido ? 'Puede pasar' : 'No puede pasar'}. ${resultado.titulo}`}
+      onClick={(e) => {
+        if (!(e.target as HTMLElement).closest('button')) onContinuar();
+      }}
     >
       {permitido ? <MdCheckCircle aria-hidden="true" /> : <MdCancel aria-hidden="true" />}
-      <h2>{titulo}</h2>
-      <p>{detalle}</p>
-      {resultado.asiento && <strong className={estilos.asiento}>{resultado.asiento}</strong>}
+      <p className={estilos.veredicto}>{permitido ? 'PUEDE PASAR' : 'NO PUEDE PASAR'}</p>
+      <h2 className={estilos.tituloResultado}>{resultado.titulo}</h2>
+      {/* En un acceso permitido el detalle repite el título y el asiento: solo se muestra cuando aporta algo. */}
+      {(!permitido || !resultado.asiento) && <p className={estilos.detalle}>{resultado.detalle}</p>}
+      {resultado.asiento && (
+        <p className={estilos.asiento}>
+          <span>Asiento</span>
+          <strong>{resultado.asiento}</strong>
+        </p>
+      )}
       {resultado.codigo && <span className={estilos.codigo}>{resultado.codigo}</span>}
-      <Boton ref={boton} onClick={onContinuar}>
-        Escanear siguiente
-      </Boton>
+      <button ref={boton} type="button" className={estilos.siguiente} onClick={onContinuar}>
+        Siguiente
+      </button>
+      <p className={estilos.pista}>
+        {permitido ? 'Vuelve a la cámara en unos segundos' : 'Toca para seguir con la siguiente persona'}
+      </p>
     </section>
+  );
+}
+
+function SinCamara({ mensaje, onReintentar }: { mensaje: string; onReintentar: () => void }) {
+  return (
+    <div className={estilos.sinCamara}>
+      <MdCameraAlt aria-hidden="true" />
+      <h2>Se necesita la cámara</h2>
+      <p>Sirve solo para leer el código del boleto. También puedes escribir el código a mano.</p>
+      <Aviso tono="aviso" texto={mensaje} />
+      <Boton onClick={onReintentar}>Permitir cámara</Boton>
+    </div>
+  );
+}
+
+function DialogoEscribirCodigo({ onCerrar, onValidar }: { onCerrar: () => void; onValidar: (codigo: string) => void }) {
+  const [codigo, setCodigo] = useState('');
+  const enviar = (e?: FormEvent) => {
+    e?.preventDefault();
+    if (codigo.trim()) onValidar(codigo.trim());
+  };
+  return (
+    <Dialogo
+      titulo="Escribir el código"
+      onCerrar={onCerrar}
+      acciones={
+        <>
+          <BotonTexto onClick={onCerrar}>Cancelar</BotonTexto>
+          <BotonTexto onClick={() => enviar()} disabled={!codigo.trim()}>
+            Validar
+          </BotonTexto>
+        </>
+      }
+    >
+      <form onSubmit={enviar} className={estilos.formularioCodigo}>
+        <p>
+          Si la cámara no lee el boleto, escribe o pega aquí el contenido completo del código QR (el código y la firma,
+          separados por un punto).
+        </p>
+        <Campo
+          etiqueta="Contenido del QR"
+          valor={codigo}
+          onCambio={setCodigo}
+          autoComplete="off"
+          autoCapitalize="off"
+          spellCheck={false}
+          ayuda="Ejemplo: EZ-0001-ABCD.firma"
+        />
+      </form>
+    </Dialogo>
+  );
+}
+
+function UltimosAccesos({ registros }: { registros: Registro[] }) {
+  if (registros.length === 0)
+    return (
+      <p id="ultimos-accesos" className={estilos.apoyo}>
+        Todavía no hay accesos registrados.
+      </p>
+    );
+  return (
+    <ul id="ultimos-accesos" className={estilos.bitacora}>
+      {registros.map((r, i) => (
+        <li key={`${r.codigo}-${r.fechaHora}-${i}`}>
+          <span className={r.permitido ? estilos.puntoOk : estilos.puntoError} aria-hidden="true" />
+          <div>
+            <strong>{r.codigo}</strong>
+            <span>
+              {r.titulo} · {hora(r.fechaHora)}
+            </span>
+          </div>
+          {!r.sincronizado && <span className={estilos.porEnviar}>por enviar</span>}
+        </li>
+      ))}
+    </ul>
   );
 }

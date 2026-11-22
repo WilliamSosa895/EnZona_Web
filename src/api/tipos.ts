@@ -1,5 +1,6 @@
 /*
- * Tipos de la API de EnZona v0.1.0 (contrato REST del Anexo E y docs/ENDPOINTS.md del repositorio de la API).
+ * Tipos de la API de EnZona v0.1.0 con la portada de eventos (rama feature/imagenes-evento): contrato REST del
+ * Anexo E y docs/ENDPOINTS.md del repositorio de la API.
  * Fechas: ISO-8601 con desfase (hora del centro de México). Importes: texto con dos decimales ("360.00").
  */
 
@@ -117,6 +118,11 @@ export interface Evento {
   motivoCancelacion: string | null;
   /** Solo en el detalle del evento. */
   tiposBoleto: TipoBoleto[] | null;
+  /**
+   * URL pública de la portada; null si no tiene. Absoluta con Cloudinary o relativa (`/api/imagenes/…`) con el
+   * almacén local de la API. Una API anterior a la migración V6 no la envía: se trata igual que null.
+   */
+  imagenUrl?: string | null;
 }
 
 export interface TipoBoletoSolicitud {
@@ -282,6 +288,50 @@ export interface ValidacionRespuesta {
   tipoBoleto: string | null;
   asiento: string | null;
   fechaUso: string | null;
+}
+
+/** Boleto del manifiesto: lo necesario para validar sin conexión (la clave HMAC nunca sale del servidor). */
+export interface BoletoManifiesto {
+  codigo: string;
+  firma: string;
+  estado: EstadoBoleto;
+  tipoBoleto: string | null;
+  /** null si el evento no tiene asientos numerados. */
+  asiento: string | null;
+}
+
+/** GET /api/eventos/{id}/manifiesto: boletos VALIDO y USADO del evento (RNF-08). */
+export interface Manifiesto {
+  eventoId: number;
+  evento: string;
+  generadoEn: string;
+  total: number;
+  boletos: BoletoManifiesto[];
+}
+
+/** Escaneo hecho sin conexión: el QR leído y la hora del dispositivo. */
+export interface RegistroSinConexion {
+  qr: string;
+  fechaHora: string;
+}
+
+export interface ResultadoSincronizado {
+  qr: string;
+  fechaHora: string;
+  resultado: ResultadoAcceso;
+  motivo: MotivoRechazo | null;
+  /** Otro dispositivo ya había admitido este boleto (prevalece el escaneo más antiguo). */
+  conflicto: boolean;
+  /** Este escaneo ya se había sincronizado antes. */
+  duplicado: boolean;
+}
+
+export interface SincronizacionRespuesta {
+  procesados: number;
+  permitidos: number;
+  rechazados: number;
+  conflictos: number;
+  resultados: ResultadoSincronizado[];
 }
 
 // ---------------------------------------------------------------- administración

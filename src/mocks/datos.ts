@@ -51,6 +51,8 @@ export interface BaseSimulada {
   ordenes: OrdenSimulada[];
   boletos: (Boleto & { usuarioId: number })[];
   validaciones: (ValidacionRespuesta & { eventoId: number })[];
+  /** Escaneos sin conexión ya sincronizados («qr|fechaHora»), para marcar los reenvíos como duplicados. */
+  sincronizados?: string[];
   sesiones: Map<string, number>;
   secuencia: number;
 }
@@ -124,6 +126,7 @@ export function crearBase(): BaseSimulada {
     estado: 'PUBLICADO',
     fechaCancelacion: null,
     motivoCancelacion: null,
+    imagenUrl: null,
     tipos: [],
     asientos: [],
     validadores: [3],
@@ -146,6 +149,13 @@ export function crearBase(): BaseSimulada {
       usuario(2, 'Óscar Organizador', 'organizador@uv.mx', ['ASISTENTE', 'ORGANIZADOR'], 'OAGO950101HVZRRS09'),
       usuario(3, 'Valeria Validadora', 'validador@uv.mx', ['ASISTENTE', 'VALIDADOR'], 'VAVL980312MVZLLL04'),
       usuario(4, 'Administración EnZona', 'admin@uv.mx', ['ADMIN'], 'ADEN900101HVZDNN01'),
+      // Cuenta que no recibió el correo de verificación: la administración puede activarla sin código.
+      {
+        ...usuario(5, 'Paco Pendiente', 'pendiente@uv.mx', ['ASISTENTE'], 'PEPA010203HVZNDC08'),
+        estado: 'PENDIENTE',
+        correoVerificado: false,
+        codigo: '123456', // el mismo código de demostración de la API simulada
+      },
     ],
     eventos: [
       evento({

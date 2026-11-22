@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { MdAdd, MdArrowDropDown, MdCheck, MdKeyboardArrowRight, MdRemove } from 'react-icons/md';
-import logo from '@/assets/enzona_logo.png';
+import logo from '@/assets/enzona_logo.svg';
 import { Boton, BotonIcono } from './Boton';
 import estilos from './Controles.module.css';
 
@@ -67,6 +67,8 @@ interface BarraAccionProps {
   cargando?: boolean;
   destacado?: boolean;
   aviso?: ReactNode;
+  /** Clave de la guía interactiva que apunta a la acción principal. */
+  guia?: string;
 }
 
 /** Barra inferior fija con el resumen del precio y la única acción principal (BarraAccion). */
@@ -78,6 +80,7 @@ export function BarraAccion({
   cargando = false,
   destacado = true,
   aviso,
+  guia,
 }: BarraAccionProps) {
   const barra = useRef<HTMLDivElement>(null);
   const [alto, setAlto] = useState<number | null>(null);
@@ -96,7 +99,7 @@ export function BarraAccion({
   return (
     <>
       <div className={estilos.relleno} style={alto ? { height: alto + 16 } : undefined} aria-hidden="true" />
-      <div ref={barra} className={estilos.barraAccion}>
+      <div ref={barra} className={estilos.barraAccion} data-guia={guia}>
         <div className={estilos.barraAccionInterior}>
           {aviso}
           {resumen && (
@@ -181,18 +184,33 @@ interface ChipFiltroProps {
   texto: string;
   activo: boolean;
   onClick: () => void;
+  /** Ícono al final del texto (p. ej., «Cerca de mí»). */
+  iconoFinal?: ReactNode;
+  deshabilitado?: boolean;
 }
 
 /** Chip de filtro (FilterChip): palomita cuando está activo. */
-export function ChipFiltro({ texto, activo, onClick }: ChipFiltroProps) {
+export function ChipFiltro({ texto, activo, onClick, iconoFinal, deshabilitado }: ChipFiltroProps) {
   return (
     <button
       type="button"
       className={[estilos.chip, activo ? estilos.chipActivo : ''].join(' ')}
       aria-pressed={activo}
+      disabled={deshabilitado}
       onClick={onClick}
     >
       {activo && <MdCheck aria-hidden="true" />}
+      {texto}
+      {iconoFinal && <span aria-hidden="true">{iconoFinal}</span>}
+    </button>
+  );
+}
+
+/** Chip de acción (AssistChip): ejecuta algo puntual, como usar una sugerencia. */
+export function ChipAccion({ texto, icono, onClick }: { texto: string; icono?: ReactNode; onClick: () => void }) {
+  return (
+    <button type="button" className={estilos.chip} onClick={onClick}>
+      {icono && <span aria-hidden="true">{icono}</span>}
       {texto}
     </button>
   );
@@ -276,9 +294,19 @@ export function ChipMenu<T extends string | number>({
 
 // ---------------------------------------------------------------- marca y estructura
 
+/** Proporción del logo v1.2 (lienzo de 1382 × 380 del diseñador). */
+const PROPORCION_LOGO = 1382 / 380;
+
 export function Logo({ alto = 40 }: { alto?: number }) {
   return (
-    <img src={logo} alt="EnZona" className={estilos.logo} style={{ height: alto }} width={alto * 3.47} height={alto} />
+    <img
+      src={logo}
+      alt="EnZona"
+      className={estilos.logo}
+      style={{ height: alto }}
+      width={Math.round(alto * PROPORCION_LOGO)}
+      height={alto}
+    />
   );
 }
 

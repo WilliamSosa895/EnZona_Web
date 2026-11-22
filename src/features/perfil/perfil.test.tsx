@@ -27,18 +27,32 @@ describe('perfil y ajustes (RF-04)', () => {
     expect(within(dialogo).queryByRole('button', { name: /Sí, dejar/ })).not.toBeInTheDocument();
   });
 
-  it('edita nombre y teléfono validando el formato', async () => {
+  it('edita el nombre y conserva el teléfono sin pedirlo (no hay SMS)', async () => {
     sesionComo('asistente@uv.mx');
+    base().usuarios[0].telefono = '2721234567';
     const { usuario } = renderizarApp('/perfil/datos');
-    const telefono = await screen.findByLabelText('Teléfono');
-    await usuario.type(telefono, '123');
+    const nombre = await screen.findByLabelText('Nombre completo');
+    expect(screen.queryByLabelText('Teléfono')).not.toBeInTheDocument();
+    await usuario.clear(nombre);
     await usuario.click(screen.getByRole('button', { name: 'Guardar cambios' }));
-    expect(screen.getByText('El teléfono debe tener de 10 a 15 dígitos.')).toBeInTheDocument();
-    await usuario.clear(telefono);
-    await usuario.type(telefono, '272 123 4567');
+    expect(screen.getByText('Escribe tu nombre completo.')).toBeInTheDocument();
+    await usuario.type(nombre, 'Ana Torres');
     await usuario.click(screen.getByRole('button', { name: 'Guardar cambios' }));
     expect(await screen.findByText('Tus datos se guardaron.')).toBeInTheDocument();
+    expect(base().usuarios[0].nombre).toBe('Ana Torres');
     expect(base().usuarios[0].telefono).toBe('2721234567');
+  });
+
+  it('seguridad muestra el teléfono solo si la cuenta ya tiene uno', async () => {
+    sesionComo('asistente@uv.mx');
+    const { unmount } = renderizarApp('/perfil/seguridad');
+    expect(await screen.findByText(/asistente@uv\.mx · verificado/)).toBeInTheDocument();
+    expect(screen.queryByText('Teléfono')).not.toBeInTheDocument();
+    unmount();
+
+    base().usuarios[0].telefono = '2721234567';
+    renderizarApp('/perfil/seguridad');
+    expect(await screen.findByText('2721234567 · sin verificar')).toBeInTheDocument();
   });
 
   it('una contraseña actual incorrecta se marca en su campo sin cerrar la sesión', async () => {

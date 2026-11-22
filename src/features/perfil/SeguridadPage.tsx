@@ -33,17 +33,18 @@ export default function SeguridadPage() {
                   </span>
                 </div>
               </div>
-              <div className={estilos.dato}>
-                <MdPhone aria-hidden="true" className={p.telefonoVerificado ? estilos.ok : estilos.neutro} />
-                <div>
-                  <strong>Teléfono</strong>
-                  <span>
-                    {p.telefono
-                      ? `${p.telefono} · ${p.telefonoVerificado ? 'verificado' : 'sin verificar'}`
-                      : 'Sin registrar'}
-                  </span>
+              {/* Sin SMS no hay forma de registrar un teléfono: la fila solo aparece si la cuenta ya tiene uno. */}
+              {p.telefono && (
+                <div className={estilos.dato}>
+                  <MdPhone aria-hidden="true" className={p.telefonoVerificado ? estilos.ok : estilos.neutro} />
+                  <div>
+                    <strong>Teléfono</strong>
+                    <span>
+                      {p.telefono} · {p.telefonoVerificado ? 'verificado' : 'sin verificar'}
+                    </span>
+                  </div>
                 </div>
-              </div>
+              )}
               <div className={estilos.dato}>
                 <MdCheckCircle aria-hidden="true" className={estilos.ok} />
                 <div>

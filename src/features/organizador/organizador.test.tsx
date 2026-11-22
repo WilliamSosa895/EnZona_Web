@@ -1,5 +1,6 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import { boletajeApi } from '@/api/boletaje';
 import { base } from '@/mocks/manejadores';
 import { renderizarApp, sesionComo } from '@/test/utilidades';
 
@@ -33,7 +34,9 @@ describe('organizador (RF-08, RF-13, RF-14, RF-17)', () => {
     await usuario.type(screen.getByLabelText('Aforo (lugares totales)'), '120');
 
     await usuario.click(screen.getByRole('button', { name: 'Crear y publicar' }));
-    expect(screen.getByText('Publicar está bloqueado hasta fijar la ubicación en el mapa.')).toBeInTheDocument();
+    expect(
+      screen.getByText('Publicar está bloqueado hasta fijar la ubicación en el mapa. Puedes guardarlo como borrador.'),
+    ).toBeInTheDocument();
 
     await usuario.click(screen.getByRole('button', { name: 'Guardar como borrador' }));
     await waitFor(() => expect(enrutador.state.location.pathname).toMatch(/^\/organizador\/eventos\/\d+$/));
@@ -88,5 +91,32 @@ describe('organizador (RF-08, RF-13, RF-14, RF-17)', () => {
     await usuario.click(within(dialogo).getByRole('button', { name: 'Cancelar evento' }));
     expect(await screen.findByText(/Evento cancelado\. Se anularon/)).toBeInTheDocument();
     expect(base().eventos.find((e) => e.id === 5)!.estado).toBe('CANCELADO');
+  });
+
+  it('el panel lista los boletos emitidos con su estado', async () => {
+    sesionComo('asistente@uv.mx');
+    const orden = await boletajeApi.crearOrden(
+      { eventoId: 2, tipoBoletoId: null, cantidad: 1, asientosIds: [], metodo: 'GRATIS', tokenPago: null },
+      'prueba-panel-boletos-01',
+    );
+    sesionComo('organizador@uv.mx', true);
+    renderizarApp('/organizador/eventos/2');
+    const seccion = await screen.findByRole('region', { name: 'Boletos emitidos' });
+    const fila = await within(seccion).findByText(orden.boletos[0].codigo);
+    expect(fila.closest('li')).toHaveTextContent('Válido');
+  });
+
+  it('dice qué falta para crear el evento junto a los botones', async () => {
+    sesionComo('organizador@uv.mx', true);
+    const { usuario } = renderizarApp('/organizador/eventos/nuevo');
+    expect(
+      await screen.findByText(
+        'Para crear el evento falta: el nombre, el lugar, la fecha y la hora de inicio, el aforo.',
+      ),
+    ).toBeInTheDocument();
+    await usuario.type(screen.getByLabelText('Nombre del evento'), 'Tarde de danzón');
+    expect(
+      screen.getByText('Para crear el evento falta: el lugar, la fecha y la hora de inicio, el aforo.'),
+    ).toBeInTheDocument();
   });
 });

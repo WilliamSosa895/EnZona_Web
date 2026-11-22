@@ -54,6 +54,12 @@ export function boletos(cantidad: number): string {
   return cantidad === 1 ? '1 boleto' : `${cantidad} boletos`;
 }
 
+/** "350 m" por debajo de un kilómetro; "1.4 km" en adelante (Formato.distancia en Android). */
+export function distancia(km: number): string {
+  if (km < 1) return `${Math.max(10, Math.floor((km * 1000) / 10) * 10)} m`;
+  return `${km.toFixed(1)} km`;
+}
+
 /** Suma exacta de importes en centavos para evitar errores de coma flotante. */
 export function multiplicar(precioUnitario: string | number, cantidad: number): number {
   return (Math.round(aNumero(precioUnitario) * 100) * cantidad) / 100;

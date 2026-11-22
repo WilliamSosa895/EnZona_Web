@@ -15,6 +15,7 @@ import { boletajeApi } from '@/api/boletaje';
 import type { Boleto } from '@/api/tipos';
 import { claves } from '@/app/consultas';
 import { useSesion } from '@/auth/useSesion';
+import { env } from '@/config/env';
 import { corto } from '@/lib/fechas';
 import { esCodigo, mensajeDeError } from '@/lib/errores';
 import {
@@ -30,6 +31,9 @@ import type { Tono } from '@/ui';
 import { CodigoQr } from './CodigoQr';
 import { hermanosDe, partesAsiento } from './agrupar';
 import { useMantenerPantalla } from './useMantenerPantalla';
+import { CLAVES_GUIA } from '@/features/guias/almacen';
+import { PASOS_BOLETO } from '@/features/guias/pasos';
+import { useGuia } from '@/features/guias/useGuia';
 import estilos from './Boletos.module.css';
 
 /**
@@ -71,10 +75,11 @@ function DetalleBoleto({ boleto, hermanos }: { boleto: Boleto; hermanos: Boleto[
   const [correoAbierto, setCorreoAbierto] = useState(false);
   const vigente = boleto.estado === 'VALIDO';
   const pantallaEncendida = useMantenerPantalla(vigente);
+  useGuia(CLAVES_GUIA.BOLETO, PASOS_BOLETO);
   const posicion = hermanos.findIndex((b) => b.id === boleto.id) + 1;
   const total = hermanos.length;
 
-  // RF-12: en producción la API envía el boleto por correo al emitirlo; aquí se abre la app de correo del equipo.
+  // RF-12: la API envía el boleto por correo (Resend) al emitirlo. Este botón es una copia: abre la app de correo del equipo.
   const cuerpoCorreo = [
     `Evento: ${boleto.eventoNombre}`,
     `Lugar: ${boleto.lugar}`,
@@ -120,7 +125,7 @@ function DetalleBoleto({ boleto, hermanos }: { boleto: Boleto; hermanos: Boleto[
           </nav>
         )}
 
-        <article className={estilos.talon} aria-label={`Boleto de ${boleto.eventoNombre}`}>
+        <article className={estilos.talon} aria-label={`Boleto de ${boleto.eventoNombre}`} data-guia="boleto_qr">
           <div className={estilos.talonDatos}>
             <div className={estilos.talonCabecera}>
               <MdConfirmationNumber className={estilos.talonIcono} aria-hidden="true" />
@@ -156,10 +161,13 @@ function DetalleBoleto({ boleto, hermanos }: { boleto: Boleto; hermanos: Boleto[
           </div>
         </article>
 
-        <TextoEstado boleto={boleto} />
+        <div data-guia="boleto_estado">
+          <TextoEstado boleto={boleto} />
+        </div>
 
         <BotonSecundario
           icono={<MdMailOutline />}
+          data-guia="boleto_correo"
           onClick={() => {
             window.location.href = enlaceCorreo;
             setCorreoAbierto(true);
@@ -168,7 +176,13 @@ function DetalleBoleto({ boleto, hermanos }: { boleto: Boleto; hermanos: Boleto[
           Enviar con mi app de correo
         </BotonSecundario>
         {correoAbierto && (
-          <Aviso texto="Se abrió tu aplicación de correo con los datos del boleto. Revisa el mensaje antes de enviarlo." />
+          <Aviso
+            texto={
+              env.apiSimulada
+                ? 'Se abrió tu aplicación de correo con los datos del boleto. La API simulada no envía correos.'
+                : 'Se abrió tu aplicación de correo con los datos del boleto. EnZona también te lo envió por correo cuando lo obtuviste; si no lo ves, revisa la carpeta de no deseados.'
+            }
+          />
         )}
 
         {vigente && (

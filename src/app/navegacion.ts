@@ -8,10 +8,14 @@ export interface Destino {
   icono: IconType;
 }
 
-/** Pestañas de navegación según los roles de quien inició sesión (destinosDeRol en Android). */
-export function destinosDeRol(roles: readonly Rol[]): Destino[] {
+/**
+ * Pestañas de navegación según los roles de quien inició sesión (destinosDeRol en Android). Quien entra por el
+ * acceso del personal (validador, organizador o administración) ve solo su trabajo: «Inicio» y «Mis boletos» son
+ * de la experiencia de asistente y se ocultan en esa sesión.
+ */
+export function destinosDeRol(roles: readonly Rol[], accesoPersonal = false): Destino[] {
   const destinos: Destino[] = [];
-  if (roles.includes('ASISTENTE')) {
+  if (roles.includes('ASISTENTE') && !accesoPersonal) {
     destinos.push({ ruta: '/', etiqueta: 'Inicio', icono: MdHome });
     destinos.push({ ruta: '/boletos', etiqueta: 'Mis boletos', icono: MdConfirmationNumber });
   }

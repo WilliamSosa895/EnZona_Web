@@ -111,6 +111,18 @@ function firmar(codigo: string): string {
 
 const siguiente = () => ++db.secuencia;
 
+/** Cuenta tal como la devuelve la administración (UsuarioAdminRespuesta). */
+const aUsuarioAdmin = (x: UsuarioSimulado) => ({
+  id: x.id,
+  nombre: x.nombre,
+  correo: x.correo,
+  telefono: x.telefono,
+  estado: x.estado,
+  correoVerificado: x.correoVerificado,
+  roles: x.roles,
+  fechaRegistro: x.fechaRegistro,
+});
+
 /** Emite N boletos (uno por asiento si el evento es numerado) y ocupa los asientos. */
 function emitirBoletos(
   e: EventoSimulado,
@@ -463,6 +475,7 @@ const eventos = [
       estado: d.publicar ? 'PUBLICADO' : 'BORRADOR',
       fechaCancelacion: null,
       motivoCancelacion: null,
+      imagenUrl: null,
       tipos,
       asientos: d.requiereAsiento ? construirAsientos(d) : [],
       validadores: [],
@@ -548,6 +561,36 @@ const eventos = [
     if (e.latitud === null)
       return problema(422, 'REGLA_NEGOCIO', 'Para publicar el evento hacen falta sus coordenadas');
     e.estado = 'PUBLICADO';
+    return HttpResponse.json(aEvento(e, true));
+  }),
+
+  http.post(api('/eventos/:id/imagen'), async ({ request, params }) => {
+    const u = usuarioDe(request);
+    if (!u) return noAutenticado();
+    const e = db.eventos.find((x) => x.id === Number(params.id));
+    if (!e) return noEncontrado();
+    if (e.organizadorId !== u.id && !tiene(u, 'ADMIN')) return prohibido();
+    if (e.estado === 'CANCELADO' || e.estado === 'REALIZADO')
+      return problema(409, 'ESTADO_INVALIDO', `Un evento ${e.estado} no se modifica`);
+    const campo = (await request.formData()).get('imagen');
+    // Comparación por forma y no con instanceof: en las pruebas el Blob puede venir de otro entorno (jsdom).
+    const archivo = typeof campo === 'object' && campo !== null ? (campo as Blob) : null;
+    if (!archivo || archivo.size === 0) return problema(422, 'REGLA_NEGOCIO', 'Adjunta una imagen (campo "imagen")');
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(archivo.type))
+      return problema(422, 'REGLA_NEGOCIO', 'La imagen debe ser JPEG, PNG o WebP');
+    // La API real la guarda en su almacén; la simulada la sirve como vista local del navegador.
+    e.imagenUrl =
+      typeof URL.createObjectURL === 'function' ? URL.createObjectURL(archivo) : `/api/imagenes/${e.id}.jpg`;
+    return HttpResponse.json(aEvento(e, true));
+  }),
+
+  http.delete(api('/eventos/:id/imagen'), ({ request, params }) => {
+    const u = usuarioDe(request);
+    if (!u) return noAutenticado();
+    const e = db.eventos.find((x) => x.id === Number(params.id));
+    if (!e) return noEncontrado();
+    if (e.organizadorId !== u.id && !tiene(u, 'ADMIN')) return prohibido();
+    e.imagenUrl = null;
     return HttpResponse.json(aEvento(e, true));
   }),
 
@@ -916,6 +959,82 @@ const otros = [
     return HttpResponse.json(r);
   }),
 
+  http.get(api('/eventos/:id/manifiesto'), ({ request, params }) => {
+    const u = usuarioDe(request);
+    if (!u) return noAutenticado();
+    const e = db.eventos.find((x) => x.id === Number(params.id));
+    if (!e) return noEncontrado();
+    if (!tiene(u, 'ADMIN') && e.organizadorId !== u.id && !e.validadores.includes(u.id)) return prohibido();
+    const boletos = db.boletos
+      .filter((b) => b.eventoId === e.id && (b.estado === 'VALIDO' || b.estado === 'USADO'))
+      .map((b) => ({
+        codigo: b.codigo,
+        firma: b.firma,
+        estado: b.estado,
+        tipoBoleto: b.tipoNombre,
+        asiento: b.asientoEtiqueta,
+      }));
+    return HttpResponse.json({
+      eventoId: e.id,
+      evento: e.nombre,
+      generadoEn: ahoraIso(),
+      total: boletos.length,
+      boletos,
+    });
+  }),
+
+  http.post(api('/validaciones/sincronizar'), async ({ request }) => {
+    const u = usuarioDe(request);
+    if (!u) return noAutenticado();
+    const { eventoId, registros } = (await request.json()) as {
+      eventoId: number;
+      registros: { qr: string; fechaHora: string }[];
+    };
+    const e = db.eventos.find((x) => x.id === Number(eventoId));
+    if (!e) return noEncontrado();
+    if (!tiene(u, 'ADMIN') && e.organizadorId !== u.id && !e.validadores.includes(u.id)) return prohibido();
+    db.sincronizados ??= [];
+    const resultados = [...registros]
+      .sort((a, b) => a.fechaHora.localeCompare(b.fechaHora))
+      .map(({ qr, fechaHora }) => {
+        const clave = `${qr}|${fechaHora}`;
+        const duplicado = db.sincronizados!.includes(clave);
+        const [codigo, firma] = String(qr).trim().split('.');
+        const b = db.boletos.find((x) => x.codigo === codigo);
+        let motivo: string | null = null;
+        let conflicto = false;
+        if (!b) motivo = 'BOLETO_INEXISTENTE';
+        else if (b.firma !== firma) motivo = 'FIRMA_INVALIDA';
+        else if (b.eventoId !== e.id) motivo = 'OTRO_EVENTO';
+        else if (b.estado === 'CANCELADO') motivo = 'CANCELADO';
+        else if (b.estado === 'USADO') {
+          motivo = 'YA_UTILIZADO';
+          // Otro dispositivo (o la validación en línea) lo admitió antes: el primero gana.
+          conflicto = !duplicado;
+        }
+        if (!motivo && b) {
+          b.estado = 'USADO';
+          b.fechaUso = fechaHora;
+        }
+        if (!duplicado) db.sincronizados!.push(clave);
+        return {
+          qr,
+          fechaHora,
+          resultado: motivo ? ('RECHAZADO' as const) : ('PERMITIDO' as const),
+          motivo,
+          conflicto,
+          duplicado,
+        };
+      });
+    return HttpResponse.json({
+      procesados: resultados.length,
+      permitidos: resultados.filter((r) => r.resultado === 'PERMITIDO').length,
+      rechazados: resultados.filter((r) => r.resultado === 'RECHAZADO').length,
+      conflictos: resultados.filter((r) => r.conflicto).length,
+      resultados,
+    });
+  }),
+
   http.get(api('/admin/usuarios'), ({ request }) => {
     const u = usuarioDe(request);
     if (!u) return noAutenticado();
@@ -926,17 +1045,26 @@ const otros = [
     const lista = db.usuarios
       .filter((x) => !estado || x.estado === estado)
       .filter((x) => !q || x.nombre.toLowerCase().includes(q) || x.correo.includes(q))
-      .map((x) => ({
-        id: x.id,
-        nombre: x.nombre,
-        correo: x.correo,
-        telefono: x.telefono,
-        estado: x.estado,
-        correoVerificado: x.correoVerificado,
-        roles: x.roles,
-        fechaRegistro: x.fechaRegistro,
-      }));
+      .map(aUsuarioAdmin);
     return paginar(lista, url);
+  }),
+
+  http.post(api('/admin/usuarios/:id/verificacion'), ({ request, params }) => {
+    const u = usuarioDe(request);
+    if (!u) return noAutenticado();
+    if (!tiene(u, 'ADMIN')) return prohibido();
+    const objetivo = db.usuarios.find((x) => x.id === Number(params.id));
+    if (!objetivo) return noEncontrado();
+    if (objetivo.estado !== 'PENDIENTE')
+      return problema(
+        422,
+        'REGLA_NEGOCIO',
+        `Solo se puede dar por verificada una cuenta PENDIENTE; esta está ${objetivo.estado}`,
+      );
+    objetivo.correoVerificado = true;
+    objetivo.telefonoVerificado = objetivo.telefono !== null;
+    objetivo.estado = 'ACTIVO';
+    return HttpResponse.json(aUsuarioAdmin(objetivo));
   }),
 
   http.patch(api('/admin/usuarios/:id/estado'), async ({ request, params }) => {
@@ -948,16 +1076,7 @@ const otros = [
     if (objetivo.id === u.id) return problema(422, 'REGLA_NEGOCIO', 'No puedes cambiar el estado de tu propia cuenta');
     const { estado } = (await request.json()) as { estado: 'ACTIVO' | 'BLOQUEADO' };
     objetivo.estado = estado;
-    return HttpResponse.json({
-      id: objetivo.id,
-      nombre: objetivo.nombre,
-      correo: objetivo.correo,
-      telefono: objetivo.telefono,
-      estado: objetivo.estado,
-      correoVerificado: objetivo.correoVerificado,
-      roles: objetivo.roles,
-      fechaRegistro: objetivo.fechaRegistro,
-    });
+    return HttpResponse.json(aUsuarioAdmin(objetivo));
   }),
 
   http.get(api('/admin/eventos'), ({ request }) => {

@@ -1,13 +1,14 @@
-import { lazy, Suspense, useMemo, useState, type FormEvent } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { MdAdd, MdDeleteOutline, MdEventBusy, MdEventSeat, MdPayments } from 'react-icons/md';
+import { MdAdd, MdDeleteOutline, MdEventBusy, MdEventSeat, MdPayments, MdPlace } from 'react-icons/md';
 import { eventosApi } from '@/api/eventos';
 import { ApiError } from '@/api/http';
 import type { Asiento, Categoria, Evento, EventoSolicitud } from '@/api/tipos';
 import { claves } from '@/app/consultas';
 import { aEntradaLocal, desdeEntradaLocal, largo, yaPaso } from '@/lib/fechas';
 import { aNumero } from '@/lib/formato';
+import { direccionAproximada } from '@/lib/geocodificacion';
 import { esCodigo, mensajeDeError } from '@/lib/errores';
 import {
   Aviso,
@@ -17,6 +18,7 @@ import {
   BotonSecundario,
   BotonTexto,
   Campo,
+  ChipAccion,
   ChipFiltro,
   Dialogo,
   EstadoVacio,
@@ -25,7 +27,12 @@ import {
   Tarjeta,
 } from '@/ui';
 import { dentroDelArea } from '@/features/mapa/geo';
-import { vendidosDe } from './calculos';
+import { direccionTrasSugerencia, vendidosDe } from './calculos';
+import { SeccionPortada } from './SeccionPortada';
+import { usePortadaFormulario } from './usePortadaFormulario';
+import { CLAVES_GUIA } from '@/features/guias/almacen';
+import { PASOS_NUEVO_EVENTO } from '@/features/guias/pasos';
+import { useGuia } from '@/features/guias/useGuia';
 import estilos from './Organizador.module.css';
 
 const MapaSelector = lazy(() => import('@/features/mapa/Mapas').then((m) => ({ default: m.MapaSelector })));
@@ -141,9 +148,19 @@ function seccionesDe(asientos: Asiento[]): SeccionForm[] {
   }));
 }
 
+/** Estado de navegación con el que se vuelve al formulario si el evento se guardó pero su portada no. */
+interface EstadoRuta {
+  errorPortada?: string;
+}
+
 function Formulario({ titulo, categorias, existente, asientos }: FormularioProps) {
   const navegar = useNavigate();
+  const ubicacion = useLocation();
   const consultas = useQueryClient();
+  const portada = usePortadaFormulario(existente?.imagenUrl ?? null);
+  // Guía de la primera vez, solo al crear (al editar ya se conoce el formulario).
+  useGuia(CLAVES_GUIA.NUEVO_EVENTO, PASOS_NUEVO_EVENTO, !existente);
+  const [errorPortadaInicial] = useState(() => (ubicacion.state as EstadoRuta | null)?.errorPortada ?? null);
   const vendidos = existente ? vendidosDe(existente) : 0;
   const publicado = existente?.estado === 'PUBLICADO';
   // La modalidad (de pago o con asiento) no cambia una vez publicado o con ventas.
@@ -178,6 +195,11 @@ function Formulario({ titulo, categorias, existente, asientos }: FormularioProps
     asientos.length ? seccionesDe(asientos) : [{ nombre: 'Luneta', filas: '', porFila: '' }],
   );
   const [aforo, setAforo] = useState(existente ? String(existente.aforo) : '');
+  // Última dirección propuesta por el mapa: distingue el texto automático del que escribió la persona.
+  const [direccionSugerida, setDireccionSugerida] = useState<string | null>(null);
+  const sugeridaAnterior = useRef<string | null>(null);
+  // true desde que la persona toca o arrastra el marcador hasta que llega la dirección de ese punto.
+  const eligioEnMapa = useRef(false);
   const [intentado, setIntentado] = useState(false);
   const [confirmarFecha, setConfirmarFecha] = useState<EventoSolicitud | null>(null);
 
@@ -256,21 +278,83 @@ function Formulario({ titulo, categorias, existente, asientos }: FormularioProps
     sumaTipos,
   ]);
 
+  // Dirección del punto del mapa (EventFormScreen en Android): si la persona acaba de elegir el punto, sustituye
+  // lo escrito; al abrir un evento existente se respeta la dirección guardada salvo que esté vacía o sea la
+  // sugerencia anterior. Si después se edita a mano, el chip «Usar la dirección del mapa» la recupera. Se espera
+  // a que el marcador quede quieto.
+  useEffect(() => {
+    if (lat === null || lng === null) return;
+    const control = new AbortController();
+    const temporizador = window.setTimeout(() => {
+      direccionAproximada(lat, lng, control.signal)
+        .then((sugerida) => {
+          if (!sugerida) return;
+          const propuesta = sugerida.slice(0, 240);
+          const reemplazar = eligioEnMapa.current;
+          const anterior = sugeridaAnterior.current;
+          setDireccion((actual) => direccionTrasSugerencia(actual, propuesta, anterior, reemplazar));
+          sugeridaAnterior.current = propuesta;
+          eligioEnMapa.current = false;
+          setDireccionSugerida(propuesta);
+        })
+        .catch(() => undefined); // sin servicio, la dirección se escribe a mano
+    }, 800);
+    return () => {
+      window.clearTimeout(temporizador);
+      control.abort();
+    };
+  }, [lat, lng]);
+
   const valido = Object.keys(errores).length === 0;
+  // Qué impide crear o guardar: se dice junto a los botones en lugar de dejarlos sin explicación (como Android).
+  const faltantes = useMemo(() => {
+    const lista: string[] = [];
+    const enMinuscula = (t: string) => t.replace(/\.$/, '').replace(/^./, (c) => c.toLocaleLowerCase('es-MX'));
+    if (!nombre.trim()) lista.push('el nombre');
+    if (!lugar.trim()) lista.push('el lugar');
+    if (!inicioIso) lista.push('la fecha y la hora de inicio');
+    else if (errores.inicio) lista.push(enMinuscula(errores.inicio));
+    if (errores.fin) lista.push(enMinuscula(errores.fin));
+    if (requiereAsiento && !planoFijo && Object.keys(errores).some((k) => /^(seccion|filas|porFila|asientos)/.test(k)))
+      lista.push('una sección válida (de 1 a 26 filas y de 1 a 200 asientos por fila)');
+    else if (!requiereAsiento && errores.aforo) lista.push('el aforo');
+    if (esDePago && Object.keys(errores).some((k) => /^(tipo|precio|cantidad|tipos)/.test(k)))
+      lista.push('el nombre, el precio y la cantidad de cada tipo de boleto');
+    return lista;
+  }, [nombre, lugar, inicioIso, errores, requiereAsiento, planoFijo, esDePago]);
   const tieneUbicacion = lat !== null && lng !== null;
   const ver = (clave: string) => (intentado ? (errores[clave] ?? null) : null);
 
   // ---------------------------------------------------------------- envío
+  // La portada se sube después de crear o guardar el evento (la API la asocia a un evento existente). Si falla,
+  // los datos del evento ya quedaron guardados: se avisa y se puede elegir otra imagen sin perder nada.
   const guardar = useMutation({
-    mutationFn: (datos: EventoSolicitud) =>
-      existente ? eventosApi.modificar(existente.id, datos) : eventosApi.crear(datos),
-    onSuccess: (e) => {
+    mutationFn: async (datos: EventoSolicitud) => {
+      const evento = existente ? await eventosApi.modificar(existente.id, datos) : await eventosApi.crear(datos);
+      try {
+        return { evento: (await portada.aplicar(evento.id)) ?? evento, errorPortada: null };
+      } catch (causa) {
+        return { evento, errorPortada: mensajeDeError(causa) };
+      }
+    },
+    onSuccess: ({ evento: e, errorPortada }) => {
       consultas.setQueryData(claves.evento(e.id), e);
       void consultas.invalidateQueries({ queryKey: claves.eventosOrganizador });
       void consultas.invalidateQueries({ queryKey: claves.asientos(e.id) });
       void consultas.invalidateQueries({ queryKey: claves.reporte(e.id) });
       void consultas.invalidateQueries({ queryKey: ['eventos'] });
-      navegar(`/organizador/eventos/${e.id}`, { replace: true });
+      void consultas.invalidateQueries({ queryKey: ['admin', 'eventos'] });
+      if (!errorPortada) {
+        navegar(`/organizador/eventos/${e.id}`, { replace: true });
+        return;
+      }
+      const mensaje = `${existente ? 'Los cambios se guardaron' : 'El evento se guardó'}, pero la portada no: ${errorPortada}`;
+      if (existente) portada.setError(mensaje);
+      else
+        navegar(`/organizador/eventos/${e.id}/editar`, {
+          replace: true,
+          state: { errorPortada: mensaje } satisfies EstadoRuta,
+        });
     },
   });
   const errorServidor = guardar.error instanceof ApiError ? guardar.error : null;
@@ -374,7 +458,20 @@ function Formulario({ titulo, categorias, existente, asientos }: FormularioProps
           error={ver('descripcion')}
         />
 
-        <Tarjeta>
+        {errorPortadaInicial && !portada.error && !portada.estado.imagen && (
+          <Aviso tono="error" texto={errorPortadaInicial} anunciar />
+        )}
+        <SeccionPortada
+          {...portada}
+          nombre={nombre}
+          categoria={categorias.find((c) => c.id === categoriaId)?.nombre ?? null}
+          fecha={inicioIso ?? new Date().toISOString()}
+          verbo={existente ? 'guardar' : 'crear'}
+          deshabilitado={guardar.isPending}
+          guia="evento_portada"
+        />
+
+        <Tarjeta data-guia="evento_fecha">
           <h2 className={estilos.tituloTarjeta}>Fecha y hora</h2>
           <p className={estilos.apoyo}>Hora del centro de México (zona del evento).</p>
           <div className={estilos.dosCampos}>
@@ -403,7 +500,7 @@ function Formulario({ titulo, categorias, existente, asientos }: FormularioProps
           )}
         </Tarjeta>
 
-        <Tarjeta>
+        <Tarjeta data-guia="evento_ubicacion">
           <h2 className={estilos.tituloTarjeta}>Ubicación</h2>
           <Campo
             etiqueta="Lugar (nombre del recinto)"
@@ -413,15 +510,32 @@ function Formulario({ titulo, categorias, existente, asientos }: FormularioProps
             error={ver('lugar') ?? campoServidor('lugar')}
           />
           <div className={estilos.dosCampos}>
-            <Campo etiqueta="Dirección" valor={direccion} onCambio={setDireccion} maxLength={240} />
+            <Campo
+              etiqueta="Dirección"
+              valor={direccion}
+              onCambio={setDireccion}
+              maxLength={240}
+              ayuda="Al tocar el mapa se llena con la dirección de ese punto; después puedes editarla."
+            />
             <Campo etiqueta="Ciudad" valor={ciudad} onCambio={setCiudad} maxLength={80} />
           </div>
+          {/* Junto al campo, como en Android: recupera la dirección del punto si se editó a mano. */}
+          {tieneUbicacion && direccionSugerida && direccionSugerida !== direccion.trim() && (
+            <div>
+              <ChipAccion
+                texto="Usar la dirección del mapa"
+                icono={<MdPlace />}
+                onClick={() => setDireccion(direccionSugerida)}
+              />
+            </div>
+          )}
           <div className={estilos.mapa}>
             <Suspense fallback={<IndicadorCarga texto="Cargando el mapa…" />}>
               <MapaSelector
                 lat={lat}
                 lng={lng}
                 onCambio={(a, b) => {
+                  eligioEnMapa.current = true;
                   setLat(a);
                   setLng(b);
                 }}
@@ -465,7 +579,7 @@ function Formulario({ titulo, categorias, existente, asientos }: FormularioProps
           </div>
         </fieldset>
 
-        <Tarjeta>
+        <Tarjeta data-guia="evento_pago">
           <Interruptor
             icono={<MdPayments />}
             texto="Evento de pago"
@@ -529,7 +643,7 @@ function Formulario({ titulo, categorias, existente, asientos }: FormularioProps
           )}
         </Tarjeta>
 
-        <Tarjeta>
+        <Tarjeta data-guia="evento_asientos">
           <Interruptor
             icono={<MdEventSeat />}
             texto="¿Este evento requiere asientos?"
@@ -625,7 +739,12 @@ function Formulario({ titulo, categorias, existente, asientos }: FormularioProps
           />
         )}
 
-        <div className={estilos.accionesFormulario}>
+        {faltantes.length > 0 && (
+          <p className={estilos.faltantes}>
+            Para {existente ? 'guardar' : 'crear'} el evento falta: {faltantes.join(', ')}.
+          </p>
+        )}
+        <div className={estilos.accionesFormulario} data-guia="evento_acciones">
           {existente ? (
             <Boton
               type="submit"
@@ -641,7 +760,9 @@ function Formulario({ titulo, categorias, existente, asientos }: FormularioProps
                 Crear y publicar
               </Boton>
               {intentado && valido && !tieneUbicacion && (
-                <p className={estilos.textoError}>Publicar está bloqueado hasta fijar la ubicación en el mapa.</p>
+                <p className={estilos.textoError}>
+                  Publicar está bloqueado hasta fijar la ubicación en el mapa. Puedes guardarlo como borrador.
+                </p>
               )}
               <BotonSecundario type="button" disabled={guardar.isPending} onClick={() => enviar(false)}>
                 Guardar como borrador

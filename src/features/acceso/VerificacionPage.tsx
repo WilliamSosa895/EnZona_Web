@@ -7,13 +7,24 @@ import { env } from '@/config/env';
 import { mensajeDeError } from '@/lib/errores';
 import { codigoValido, correoValido } from '@/lib/validaciones';
 import { Aviso, Boton, BotonTexto, Campo, ZonaDemostracion } from '@/ui';
+import { leerUltimoEnvio, registrarEnvio, segundosRestantes, textoReenvio } from './reenvio';
 import estilos from './Acceso.module.css';
 
-const ESPERA_REENVIO_S = 60;
+/** Cuando la API pide el código del teléfono: EnZona solo envía correo (Resend), así que ese código no llegaría. */
+export const AVISO_SIN_SMS =
+  'Tu cuenta tiene un teléfono registrado y por ahora EnZona no envía SMS. ' +
+  'Escribe al equipo de EnZona (enzona.org@gmail.com) para activarla.';
+
+/** La web solo pide el código del correo; el del teléfono exigiría un SMS que la API no envía. */
+const canal: CanalVerificacion = 'CORREO';
+
+const AYUDA_CORREO =
+  'Si no lo ves, revisa la carpeta de no deseados: llega de EnZona con el asunto «Tu código de verificación de EnZona».';
 
 /**
  * Verificación de la cuenta con código de un solo uso (RF-02). Casos CP-01 (código correcto) y CP-04 (incorrecto).
- * Si el usuario registró teléfono, después del correo se verifica el teléfono (canal TELEFONO).
+ * La API envía el código por correo. Si además pide el del teléfono, la pantalla no lo solicita (no hay SMS):
+ * explica cómo activar la cuenta y deshabilita Verificar y Reenviar, como OtpScreen en Android.
  */
 export default function VerificacionPage() {
   const navegar = useNavigate();
@@ -21,17 +32,20 @@ export default function VerificacionPage() {
   const [parametros] = useSearchParams();
   const [correo, setCorreo] = useState(parametros.get('correo') ?? '');
   const correoFijo = !!parametros.get('correo');
-  const [canal, setCanal] = useState<CanalVerificacion>('CORREO');
   const [codigo, setCodigo] = useState('');
+  // Fallo al verificar (la cuenta sigue sin activar) y fallo al pedir otro código: son cosas distintas.
   const [error, setError] = useState<string | null>(null);
+  const [errorReenvio, setErrorReenvio] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(state?.aviso ?? null);
-  const [espera, setEspera] = useState(0);
+  const [sinSms, setSinSms] = useState(false);
+  // Al venir del registro la API acaba de emitir un código: la espera corre desde el principio.
+  const [espera, setEspera] = useState(() => (env.apiSimulada ? 0 : segundosRestantes(leerUltimoEnvio(correo))));
 
   useEffect(() => {
     if (espera <= 0) return;
-    const t = window.setTimeout(() => setEspera((s) => s - 1), 1000);
+    const t = window.setTimeout(() => setEspera(segundosRestantes(leerUltimoEnvio(correo))), 1000);
     return () => window.clearTimeout(t);
-  }, [espera]);
+  }, [espera, correo]);
 
   const verificacion = useMutation({
     mutationFn: () => identidadApi.verificar(correo.trim().toLowerCase(), codigo, canal),
@@ -40,8 +54,9 @@ export default function VerificacionPage() {
       if (r.estado === 'ACTIVO') {
         navegar('/acceso', { replace: true, state: { aviso: 'Tu cuenta está activa. Ya puedes iniciar sesión.' } });
       } else if (r.verificacionesPendientes.includes('TELEFONO')) {
-        setCanal('TELEFONO');
-        setInfo('Correo verificado. Ahora ingresa el código que enviamos a tu teléfono.');
+        // Sin proveedor de SMS ese código nunca llegará: no se pide.
+        setSinSms(true);
+        setInfo(null);
       }
     },
     onError: (causa) => setError(mensajeDeError(causa)),
@@ -50,20 +65,21 @@ export default function VerificacionPage() {
   const reenvio = useMutation({
     mutationFn: () => identidadApi.reenviarCodigo(correo.trim().toLowerCase(), canal),
     onSuccess: () => {
-      setEspera(ESPERA_REENVIO_S);
+      registrarEnvio(correo);
+      setEspera(env.apiSimulada ? 0 : segundosRestantes(leerUltimoEnvio(correo)));
       setCodigo('');
       setError(null);
-      setInfo(
-        canal === 'TELEFONO' ? 'Te enviamos un código nuevo por SMS.' : 'Te enviamos un código nuevo a tu correo.',
-      );
+      // La API descarta en silencio un reenvío antes de 60 s: el código anterior sigue valiendo.
+      setInfo('Pedimos un código nuevo para tu correo. Si no llega en un minuto, el anterior sigue vigente.');
     },
-    onError: (causa) => setError(mensajeDeError(causa)),
+    onError: (causa) => setErrorReenvio(mensajeDeError(causa)),
   });
 
   function enviar(e: FormEvent) {
     e.preventDefault();
-    if (!codigoValido(codigo) || !correoValido(correo) || verificacion.isPending) return;
+    if (sinSms || !codigoValido(codigo) || !correoValido(correo) || verificacion.isPending) return;
     setError(null);
+    setErrorReenvio(null);
     verificacion.mutate();
   }
 
@@ -74,14 +90,15 @@ export default function VerificacionPage() {
           Verifica tu cuenta
         </h1>
         <p className={estilos.lema} style={{ marginTop: 8 }}>
-          {canal === 'TELEFONO'
-            ? 'Enviamos un código de 6 dígitos a tu teléfono. Ingrésalo para terminar de activar tu cuenta.'
+          {sinSms
+            ? 'Tu correo quedó verificado, pero falta confirmar el teléfono.'
             : 'Enviamos un código de 6 dígitos a tu correo. Ingrésalo para activar tu cuenta.'}
         </p>
 
         <form className={estilos.formulario} onSubmit={enviar} noValidate>
           {info && <Aviso texto={info} tono="exito" anunciar />}
-          {env.apiSimulada && (
+          {sinSms && <Aviso texto={AVISO_SIN_SMS} anunciar />}
+          {env.apiSimulada && !sinSms && (
             <ZonaDemostracion>
               <span>La API simulada no envía correos. El código es:</span>
               <span className={estilos.codigoDemo}>123456</span>
@@ -91,10 +108,14 @@ export default function VerificacionPage() {
             <Campo
               etiqueta="Correo de tu cuenta"
               valor={correo}
-              onCambio={setCorreo}
+              onCambio={(v) => {
+                setCorreo(v);
+                setEspera(env.apiSimulada ? 0 : segundosRestantes(leerUltimoEnvio(v)));
+              }}
               type="email"
               inputMode="email"
               autoComplete="email"
+              disabled={sinSms}
               error={correo && !correoValido(correo) ? 'El correo no tiene un formato válido.' : null}
             />
           )}
@@ -110,23 +131,34 @@ export default function VerificacionPage() {
             inputMode="numeric"
             autoComplete="one-time-code"
             maxLength={6}
+            disabled={sinSms}
+            // Con la API simulada el código se ve arriba: no hay correo que buscar.
+            ayuda={!env.apiSimulada && !sinSms ? AYUDA_CORREO : undefined}
             error={error}
           />
           <Boton
             type="submit"
-            disabled={!codigoValido(codigo) || !correoValido(correo)}
+            disabled={sinSms || !codigoValido(codigo) || !correoValido(correo)}
             cargando={verificacion.isPending}
           >
             Verificar
           </Boton>
         </form>
         <BotonTexto
-          onClick={() => reenvio.mutate()}
-          disabled={espera > 0 || reenvio.isPending || !correoValido(correo)}
+          onClick={() => {
+            setErrorReenvio(null);
+            reenvio.mutate();
+          }}
+          disabled={sinSms || espera > 0 || reenvio.isPending || !correoValido(correo)}
           style={{ marginTop: 8 }}
         >
-          {espera > 0 ? `Reenviar código en ${espera} s` : 'Reenviar código'}
+          {textoReenvio(espera)}
         </BotonTexto>
+        {errorReenvio && (
+          <p className={estilos.error} role="alert" style={{ textAlign: 'center', marginTop: 8 }}>
+            {errorReenvio}
+          </p>
+        )}
         {error && (
           <p className={estilos.error} style={{ textAlign: 'center', marginTop: 8 }}>
             La cuenta permanece sin activar hasta que el código sea correcto.

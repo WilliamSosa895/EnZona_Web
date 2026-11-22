@@ -133,6 +133,25 @@ Cada marco de rutas tiene un `errorElement` (`ErrorRuta`): muestra «Algo salió
 - La barra de acción (precio y botón principal) va fija abajo en el teléfono y pasa a una columna lateral pegajosa desde 1024 px (`DosColumnas`).
 - Los listados pasan de una a dos o tres columnas; los formularios se limitan a unos 720 px de ancho para que las líneas sean legibles.
 
+## Guías de la primera vez
+
+`src/features/guias` replica `GuiaInteractiva.kt`. `AnfitrionGuias` envuelve el marco con sesión y dibuja la guía activa en un portal: un SVG con máscara oscurece la pantalla y recorta el foco, la flecha es una curva Bézier y el texto se coloca debajo o encima del foco (`geometria.ts`, funciones puras con pruebas). Cada pantalla declara su recorrido con `useGuia(clave, pasos, activa)` y marca sus objetivos con el atributo `data-guia`, sin referencias entre componentes. Mientras la guía está abierta el resto de la página queda `inert`; el foco se atrapa en sus botones. Lo visto se guarda en `localStorage` (`almacen.ts`).
+
+## Validación en la puerta
+
+`src/features/validador/validacion.ts` concentra las reglas: títulos de resultado (los de `Mapeo.kt`), validación sin conexión contra el manifiesto y emparejamiento del veredicto del servidor al sincronizar. La pantalla solo las muestra.
+
+```mermaid
+sequenceDiagram
+  participant V as Validador (web)
+  participant A as API
+  V->>A: GET /api/eventos/{id}/manifiesto (con red)
+  A-->>V: códigos y firmas VALIDO/USADO (solo en memoria)
+  Note over V: Sin red: compara el QR completo con el manifiesto<br/>y guarda el escaneo como pendiente
+  V->>A: POST /api/validaciones/sincronizar (al volver la red)
+  A-->>V: veredicto por escaneo (el primero gana; conflicto o duplicado)
+```
+
 ## Decisiones
 
 | Decisión                                          | Motivo                                                                                                                            |
@@ -145,3 +164,5 @@ Cada marco de rutas tiene un `errorElement` (`ErrorRuta`): muestra «Algo salió
 | Fechas con `Intl` y la zona `America/Mexico_City` | Las horas del evento se muestran y capturan en la zona de Orizaba, sin importar la zona del navegador, igual que `FechaEvento.kt` |
 | OpenStreetMap + Leaflet                           | Sin clave de API ni costo; el mismo proveedor que la app Android                                                                  |
 | QR generado en el navegador                       | El contenido firmado del boleto no sale a ningún servicio externo                                                                 |
+| Portada recortada en el navegador (canvas)        | Lo que se ve en la vista previa es exactamente lo que se sube; se envía un JPEG ligero y sin metadatos de la foto original        |
+| Gráficas del resumen en HTML y CSS                | Son barras simples: listas con sus valores escritos, accesibles e imprimibles, sin sumar una librería de gráficas                 |

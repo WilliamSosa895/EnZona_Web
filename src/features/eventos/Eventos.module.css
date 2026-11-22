@@ -6,9 +6,16 @@
   padding-top: var(--esp-m);
 }
 
+.marca {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-s);
+}
+
 .titulo {
   color: var(--tinta);
-  font: var(--headline-medium);
+  font: var(--headline-small);
 }
 
 .zona {

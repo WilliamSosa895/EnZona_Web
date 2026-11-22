@@ -8,24 +8,33 @@ export interface Coordenadas {
   lng: number;
 }
 
+/** Error al obtener la ubicación; `permisoNegado` distingue la negativa de una falla del dispositivo. */
+export class ErrorUbicacion extends Error {
+  readonly permisoNegado: boolean;
+
+  constructor(mensaje: string, permisoNegado: boolean) {
+    super(mensaje);
+    this.name = 'ErrorUbicacion';
+    this.permisoNegado = permisoNegado;
+  }
+}
+
 /** Redondeo a 4 decimales (≈ 11 m): suficiente para ordenar y evita enviar más precisión de la necesaria. */
 const redondear = (v: number) => Math.round(v * 10_000) / 10_000;
 
 export function obtenerUbicacion(): Promise<Coordenadas> {
   return new Promise((resolver, rechazar) => {
     if (!('geolocation' in navigator)) {
-      rechazar(new Error('Tu navegador no permite obtener la ubicación.'));
+      rechazar(new ErrorUbicacion('Tu navegador no permite obtener la ubicación.', false));
       return;
     }
     navigator.geolocation.getCurrentPosition(
       (p) => resolver({ lat: redondear(p.coords.latitude), lng: redondear(p.coords.longitude) }),
       (e) =>
         rechazar(
-          new Error(
-            e.code === e.PERMISSION_DENIED
-              ? 'No diste permiso para usar tu ubicación. Puedes elegir tu ciudad a mano.'
-              : 'No se pudo obtener tu ubicación ahora. Elige tu ciudad a mano.',
-          ),
+          e.code === e.PERMISSION_DENIED
+            ? new ErrorUbicacion('No diste permiso para usar tu ubicación. Puedes elegir tu ciudad a mano.', true)
+            : new ErrorUbicacion('No se pudo obtener tu ubicación ahora. Elige tu ciudad a mano.', false),
         ),
       { enableHighAccuracy: false, timeout: 10_000, maximumAge: 300_000 },
     );
