@@ -1,115 +1,61 @@
-import { describe, expect, it } from 'vitest';
-import type { Evento, Reporte, UsuarioAdmin } from '@/api/tipos';
-import { calcularEstadisticas, etiquetaMes } from './estadisticas';
+import { describe, expect, it } from "vitest";
+import type { EventoDto, ReporteDto, UsuarioDto } from "@/lib/api/tipos";
+import { calcularEstadisticas, enLotes } from "./estadisticas";
 
-const usuario = (id: number, estado: UsuarioAdmin['estado'], roles: UsuarioAdmin['roles']): UsuarioAdmin => ({
-  id,
-  nombre: `U${id}`,
-  correo: `u${id}@uv.mx`,
-  telefono: null,
-  estado,
-  correoVerificado: true,
-  roles,
-  fechaRegistro: '2026-09-01T10:00:00-06:00',
-});
+const usuarios: UsuarioDto[] = [
+  { id: 1, nombre: "Ana", estado: "ACTIVO", roles: ["ASISTENTE"] },
+  { id: 2, nombre: "Nancy", estado: "ACTIVO", roles: ["ASISTENTE", "ORGANIZADOR"] },
+  { id: 3, nombre: "Luis", estado: "ACTIVO", roles: ["ASISTENTE", "VALIDADOR"] },
+  { id: 4, nombre: "Admin", estado: "BLOQUEADO", roles: ["ADMIN"] },
+];
 
-const evento = (id: number, o: Partial<Evento>): Evento => ({
-  id,
-  organizadorId: 2,
-  nombre: `Evento ${id}`,
-  descripcion: null,
-  lugar: 'Foro',
-  direccion: null,
-  ciudad: 'Orizaba',
-  latitud: null,
-  longitud: null,
-  categoriaId: 1,
-  categoria: 'Música',
-  fechaHoraInicio: '2026-10-30T20:00:00-06:00',
-  fechaHoraFin: null,
-  esDePago: true,
-  requiereAsiento: false,
-  aforo: 100,
-  disponibles: 100,
-  precioDesde: '100.00',
-  estado: 'PUBLICADO',
-  distanciaKm: null,
-  fechaCancelacion: null,
-  motivoCancelacion: null,
-  tiposBoleto: null,
-  ...o,
-});
+const eventos: EventoDto[] = [
+  { id: 1, nombre: "Feria", lugar: "Palacio", fechaHoraInicio: "2026-10-27T10:00:00-06:00", esDePago: false, requiereAsiento: false, aforo: 120, disponibles: 119, estado: "PUBLICADO", categoria: "Cultural" },
+  { id: 2, nombre: "Jazz", lugar: "Foro", fechaHoraInicio: "2026-10-31T20:00:00-06:00", esDePago: true, requiereAsiento: true, aforo: 50, disponibles: 48, estado: "PUBLICADO", categoria: "Música" },
+  { id: 3, nombre: "Taller", lugar: "Cerro", fechaHoraInicio: "2026-11-03T19:00:00-06:00", esDePago: true, requiereAsiento: false, aforo: 20, disponibles: 20, estado: "BORRADOR", categoria: "Taller" },
+];
 
-const reporte = (eventoId: number, o: Partial<Reporte>): Reporte => ({
-  eventoId,
-  evento: '',
-  estado: 'PUBLICADO',
-  aforo: 100,
-  disponibles: 0,
-  boletosEmitidos: 0,
-  accesosValidados: 0,
-  accesosRechazados: 0,
-  boletosCancelados: 0,
-  ingresos: '0.00',
-  reembolsado: '0.00',
-  ocupacion: 0,
-  porTipo: [],
-  ...o,
-});
+const reportes = new Map<number, ReporteDto | null>([
+  [1, { eventoId: 1, boletosEmitidos: 1, accesosValidados: 0, ingresos: "0.00" }],
+  [2, { eventoId: 2, boletosEmitidos: 2, accesosValidados: 1, ingresos: "360.00" }],
+]);
 
-describe('calcularEstadisticas (como EstadisticasAdminTest de Android)', () => {
-  const e = calcularEstadisticas(
-    [
-      usuario(1, 'ACTIVO', ['ASISTENTE']),
-      usuario(2, 'ACTIVO', ['ASISTENTE', 'ORGANIZADOR']),
-      usuario(3, 'PENDIENTE', ['ASISTENTE']),
-      usuario(4, 'BLOQUEADO', ['ASISTENTE', 'VALIDADOR']),
-      usuario(5, 'ACTIVO', ['ADMIN']),
-    ],
-    [
-      evento(1, { disponibles: 40 }),
-      evento(2, { categoria: 'Teatro', disponibles: 90, fechaHoraInicio: '2026-11-05T19:00:00-06:00' }),
-      evento(3, { estado: 'BORRADOR', esDePago: false, categoria: null }),
-      evento(4, { estado: 'CANCELADO', fechaHoraInicio: '2026-09-15T19:00:00-06:00' }),
-      evento(5, { estado: 'REALIZADO', aforo: 50, disponibles: 10 }),
-    ],
-    [
-      reporte(1, { boletosEmitidos: 60, accesosValidados: 30, ingresos: '6000.00' }),
-      reporte(2, { boletosEmitidos: 10, ingresos: '1000.00' }),
-      reporte(4, { boletosCancelados: 5, reembolsado: '500.00', ingresos: '500.00' }),
-      reporte(5, { boletosEmitidos: 40, accesosValidados: 38, ingresos: '4000.00' }),
-    ],
-  );
-
-  it('cuenta cuentas por estado y por rol', () => {
-    expect([e.usuariosTotal, e.usuariosActivos, e.usuariosPendientes, e.usuariosBloqueados]).toEqual([5, 3, 1, 1]);
-    expect([e.organizadores, e.validadores, e.administradores]).toEqual([1, 1, 1]);
+describe("resumen de administración (RF-18)", () => {
+  it("cuenta cuentas por estado y por rol", () => {
+    const datos = calcularEstadisticas(usuarios, eventos, reportes);
+    expect(datos.usuarios).toBe(4);
+    expect(datos.cuentas).toEqual({ activas: 3, pendientes: 0, bloqueadas: 1 });
+    expect(datos.porRol).toEqual({ organizadores: 1, validadores: 1, administradores: 1 });
   });
 
-  it('agrupa eventos por estado, categoría y mes', () => {
-    expect([e.eventosPublicados, e.eventosBorrador, e.eventosRealizados, e.eventosCancelados]).toEqual([2, 1, 1, 1]);
-    expect([e.eventosGratuitos, e.eventosDePago]).toEqual([1, 4]);
-    expect(e.eventosPorCategoria).toEqual([
-      { etiqueta: 'Música', valor: 3 },
-      { etiqueta: 'Sin categoría', valor: 1 },
-      { etiqueta: 'Teatro', valor: 1 },
+  it("cuenta eventos por estado, modalidad, categoría y mes", () => {
+    const datos = calcularEstadisticas(usuarios, eventos, reportes);
+    expect(datos.porEstado).toEqual({ publicados: 2, borradores: 1, realizados: 0, cancelados: 0 });
+    expect(datos.gratuitos).toBe(1);
+    expect(datos.dePago).toBe(2);
+    expect(datos.porCategoria).toHaveLength(3);
+    expect(datos.porMes).toEqual([
+      { etiqueta: "oct 2026", total: 2 },
+      { etiqueta: "nov 2026", total: 1 },
     ]);
-    expect(e.eventosPorMes.map((m) => m.etiqueta)).toEqual(['sep 26', 'oct 26', 'nov 26']);
   });
 
-  it('suma ingresos y accesos de los reportes y calcula ocupación y asistencia', () => {
-    expect(e.ingresosTotales).toBe(11_500);
-    expect(e.ingresosNetos).toBe(11_000);
-    expect(e.ingresosPorEvento[0]).toEqual({ etiqueta: 'Evento 1', valor: 6000 });
-    expect(e.boletosEmitidos).toBe(110);
-    expect(Math.round(e.asistencia)).toBe(62);
-    // Publicados y realizados: (60 + 10 + 40) de (100 + 100 + 50)
-    expect(Math.round(e.ocupacionGlobal)).toBe(44);
-    expect(e.ocupacionPorEvento.map((d) => d.valor)).toEqual([60, 10]);
+  it("suma boletos, accesos e ingresos y calcula la ocupación de los publicados", () => {
+    const datos = calcularEstadisticas(usuarios, eventos, reportes);
+    expect(datos.boletosEmitidos).toBe(3);
+    expect(datos.accesosValidados).toBe(1);
+    expect(datos.ingresos).toBe(360);
+    expect(datos.ocupacion).toBe(2); // 3 de 170
+    expect(datos.ingresosPorEvento).toEqual([{ nombre: "Jazz", ingresos: 360 }]);
   });
 
-  it('etiqueta los meses como «oct 26»', () => {
-    expect(etiquetaMes('2026-10')).toBe('oct 26');
-    expect(etiquetaMes('2030-01')).toBe('ene 30');
+  it("procesa en lotes conservando el orden", async () => {
+    const llamadas: number[][] = [];
+    const resultado = await enLotes([1, 2, 3, 4, 5], 2, async (numero) => {
+      llamadas.push([numero]);
+      return numero * 10;
+    });
+    expect(resultado).toEqual([10, 20, 30, 40, 50]);
+    expect(llamadas).toHaveLength(5);
   });
 });
