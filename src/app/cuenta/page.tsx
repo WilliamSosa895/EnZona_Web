@@ -10,6 +10,7 @@ import { RUTAS } from "@/lib/rutas";
 import { exigirSesion } from "@/lib/sesion/servidor";
 import { misEventos } from "@/features/eventos/api";
 import { BotonCerrarSesion, TarjetaRolOrganizador } from "@/features/cuenta/AccionesCuenta";
+import paquete from "../../../package.json";
 
 export const metadata: Metadata = { title: "Mi cuenta" };
 
@@ -98,6 +99,7 @@ export default async function PaginaCuenta() {
         ) : null}
 
         <BotonCerrarSesion />
+        <p className="text-sm text-gris-texto">EnZona · versión {paquete.version} (piloto)</p>
       </div>
     </Cascaron>
   );

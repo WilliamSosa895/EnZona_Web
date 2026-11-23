@@ -9,12 +9,12 @@ import { RUTAS } from "@/lib/rutas";
 import { LogoEnZona } from "@/components/marca/LogoEnZona";
 
 /*
- * Navegación por rol, igual que la barra inferior de la app:
- *  - asistente: Inicio · Mis boletos · Perfil
- *  - organizador: + Mis eventos
- *  - administrador: + Admin
- *  - validador que entró por el acceso de personal: Escanear · Perfil
- * En escritorio es una cabecera; en móvil, barra fija inferior.
+ * Navegación por rol y por tipo de acceso, igual que la barra inferior de la app:
+ *  - acceso normal: Inicio · Mis boletos · (Mis eventos) · (Admin) · Perfil
+ *  - acceso de personal: solo las pestañas del personal · Perfil
+ *      organizador → Mis eventos · validador → Escanear · administrador → Admin
+ * Nunca más de cinco pestañas. En escritorio es una cabecera; en móvil, barra
+ * fija inferior.
  */
 
 interface Destino {
@@ -24,44 +24,39 @@ interface Destino {
   activo: (ruta: string) => boolean;
 }
 
+const INICIO: Destino = { href: RUTAS.inicio, texto: "Inicio", icono: Home, activo: (r) => r === "/" || r.startsWith("/evento") || r.startsWith("/notificaciones") };
+const MIS_BOLETOS: Destino = {
+  href: RUTAS.misBoletos,
+  texto: "Mis boletos",
+  icono: Ticket,
+  activo: (r) => r.startsWith("/mis-boletos") || r.startsWith("/boleto") || r.startsWith("/orden"),
+};
+const MIS_EVENTOS: Destino = { href: RUTAS.misEventos, texto: "Mis eventos", icono: CalendarDays, activo: (r) => r.startsWith("/mis-eventos") };
+const ESCANEAR: Destino = { href: RUTAS.escanear, texto: "Escanear", icono: ScanLine, activo: (r) => r.startsWith("/escanear") };
+const ADMIN: Destino = { href: RUTAS.admin, texto: "Admin", icono: ShieldCheck, activo: (r) => r.startsWith("/admin") };
+
 export function destinosPara(roles: Rol[], accesoPersonal: boolean, conSesion: boolean): Destino[] {
-  const soloValidador = accesoPersonal && roles.includes("VALIDADOR") && !roles.includes("ORGANIZADOR") && !roles.includes("ADMIN");
-  if (soloValidador) {
-    return [
-      { href: RUTAS.escanear, texto: "Escanear", icono: ScanLine, activo: (r) => r.startsWith("/escanear") },
-      { href: RUTAS.cuenta, texto: "Perfil", icono: User, activo: (r) => r.startsWith("/cuenta") },
-    ];
-  }
-  const destinos: Destino[] = [
-    { href: RUTAS.inicio, texto: "Inicio", icono: Home, activo: (r) => r === "/" || r.startsWith("/evento") },
-    {
-      href: RUTAS.misBoletos,
-      texto: "Mis boletos",
-      icono: Ticket,
-      activo: (r) => r.startsWith("/mis-boletos") || r.startsWith("/boleto") || r.startsWith("/orden"),
-    },
-  ];
-  if (roles.includes("ORGANIZADOR")) {
-    destinos.push({
-      href: RUTAS.misEventos,
-      texto: "Mis eventos",
-      icono: CalendarDays,
-      activo: (r) => r.startsWith("/mis-eventos"),
-    });
-  }
-  if (roles.includes("VALIDADOR") || roles.includes("ORGANIZADOR") || roles.includes("ADMIN")) {
-    destinos.push({ href: RUTAS.escanear, texto: "Escanear", icono: ScanLine, activo: (r) => r.startsWith("/escanear") });
-  }
-  if (roles.includes("ADMIN")) {
-    destinos.push({ href: RUTAS.admin, texto: "Admin", icono: ShieldCheck, activo: (r) => r.startsWith("/admin") });
-  }
-  destinos.push({
+  const perfil: Destino = {
     href: conSesion ? RUTAS.cuenta : RUTAS.login,
     texto: conSesion ? "Perfil" : "Entrar",
     icono: User,
     activo: (r) => r.startsWith("/cuenta") || r.startsWith("/login"),
-  });
-  return destinos;
+  };
+  const esPersonal = roles.some((rol) => rol !== "ASISTENTE");
+
+  if (accesoPersonal && esPersonal) {
+    const destinos: Destino[] = [];
+    if (roles.includes("ORGANIZADOR")) destinos.push(MIS_EVENTOS);
+    if (roles.includes("VALIDADOR")) destinos.push(ESCANEAR);
+    if (roles.includes("ADMIN")) destinos.push(ADMIN);
+    return [...destinos, perfil];
+  }
+
+  const destinos: Destino[] = [INICIO, MIS_BOLETOS];
+  if (roles.includes("ORGANIZADOR")) destinos.push(MIS_EVENTOS);
+  if (roles.includes("VALIDADOR") && !roles.includes("ORGANIZADOR")) destinos.push(ESCANEAR);
+  if (roles.includes("ADMIN")) destinos.push(ADMIN);
+  return [...destinos, perfil].slice(0, 5);
 }
 
 interface PropsNavegacion {
@@ -77,7 +72,7 @@ export function Cabecera({ roles, accesoPersonal, conSesion, nombre }: PropsNave
   return (
     <header className="sticky top-0 z-30 hidden border-b border-linea bg-fondo/90 backdrop-blur md:block">
       <div className="mx-auto flex h-18 max-w-6xl items-center justify-between gap-6 px-6">
-        <Link href={RUTAS.inicio} aria-label="EnZona, inicio" className="flex items-center rounded-campo">
+        <Link href={accesoPersonal && roles.some((rol) => rol !== "ASISTENTE") ? destinos[0].href : RUTAS.inicio} aria-label="EnZona, inicio" className="flex items-center rounded-campo">
           <LogoEnZona alto={40} />
         </Link>
         <nav aria-label="Principal" className="flex items-center gap-1">
@@ -113,26 +108,26 @@ export function BarraInferior({ roles, accesoPersonal, conSesion }: PropsNavegac
       aria-label="Principal"
       className="fixed inset-x-0 bottom-0 z-30 border-t border-linea bg-superficie pb-[env(safe-area-inset-bottom)] md:hidden"
     >
-      <ul className="mx-auto flex h-(--barra-inferior) max-w-xl items-stretch justify-around px-2">
+      <ul className="mx-auto flex h-(--barra-inferior) max-w-xl items-stretch justify-around px-1">
         {destinos.map((destino) => {
           const activo = destino.activo(ruta);
           const Icono = destino.icono;
           return (
-            <li key={destino.href} className="flex flex-1">
+            <li key={destino.href} className="flex min-w-0 flex-1">
               <Link
                 href={destino.href}
                 aria-current={activo ? "page" : undefined}
-                className="flex flex-1 flex-col items-center justify-center gap-1 text-xs font-medium"
+                className="flex min-w-0 flex-1 flex-col items-center justify-center gap-1 px-0.5 text-[11px] font-medium"
               >
                 <span
                   className={cn(
-                    "nav-vivo flex h-8 w-16 items-center justify-center rounded-pildora",
+                    "nav-vivo flex h-8 w-14 items-center justify-center rounded-pildora",
                     activo ? "bg-marino text-blanco" : "text-gris-texto",
                   )}
                 >
                   <Icono className="size-5" aria-hidden="true" />
                 </span>
-                <span className={activo ? "text-marino" : "text-gris-texto"}>{destino.texto}</span>
+                <span className={cn("max-w-full truncate", activo ? "text-marino" : "text-gris-texto")}>{destino.texto}</span>
               </Link>
             </li>
           );

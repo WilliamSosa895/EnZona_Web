@@ -255,7 +255,7 @@ export function Interruptor({ etiqueta, descripcion, checked, onChange, disabled
         <span
           aria-hidden="true"
           className={cn(
-            "absolute top-1 size-6 rounded-full bg-blanco shadow-tarjeta transition-transform duration-200",
+            "absolute top-1 left-0 size-6 rounded-full bg-blanco shadow-tarjeta transition-transform duration-200",
             checked ? "translate-x-7" : "translate-x-1",
           )}
         />

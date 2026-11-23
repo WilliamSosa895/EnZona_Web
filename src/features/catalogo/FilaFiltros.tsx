@@ -9,6 +9,10 @@ import { CIUDAD_POR_DEFECTO } from "@/lib/capacidades";
 import { Boton } from "@/components/ui/Boton";
 import { Campo } from "@/components/ui/Campo";
 import { Dialogo } from "@/components/ui/Dialogo";
+import { LogoEnZona } from "@/components/marca/LogoEnZona";
+import { CampanaBoleto } from "@/components/marca/CampanaBoleto";
+import Link from "next/link";
+import { RUTAS } from "@/lib/rutas";
 import { FILTROS_FECHA, contarFiltrosActivos, type ParametrosInicio } from "./filtros";
 
 /*
@@ -90,12 +94,22 @@ export function FilaFiltros({ parametros, categorias, lugares }: Props) {
 
   return (
     <div className="flex flex-col gap-4">
+      <div className="flex items-center justify-between md:hidden">
+        <LogoEnZona alto={40} />
+        <Link
+          href={RUTAS.notificaciones}
+          aria-label="Notificaciones"
+          className="chip-vivo flex size-11 items-center justify-center rounded-pildora hover:bg-tinte-50"
+        >
+          <CampanaBoleto />
+        </Link>
+      </div>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="flex flex-col gap-1">
-          <h1 className="titulo-vivo text-[2.25rem] leading-[1.05] font-black tracking-tight text-tinta sm:text-[3.25rem]">
+          <h1 className="titulo-vivo text-[2rem] leading-[1.05] font-black tracking-tight text-tinta sm:text-[3.25rem]">
             Eventos cerca de ti
           </h1>
-          <p className="titulo-vivo text-[17px] text-gris-texto [animation-delay:120ms] sm:text-lg">
+          <p className="titulo-vivo hidden text-[17px] text-gris-texto [animation-delay:120ms] sm:text-lg md:block">
             Descubre, compra y entra con tu QR. Sin cargos escondidos.
           </p>
         </div>

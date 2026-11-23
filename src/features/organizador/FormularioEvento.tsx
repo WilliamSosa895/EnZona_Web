@@ -17,6 +17,7 @@ import { Aviso, Tarjeta } from "@/components/ui/Superficies";
 import { estiloDeCategoria } from "@/components/eventos/Portada";
 import { guardarEvento, publicarEvento, quitarPortada, subirPortada } from "./acciones";
 import { prepararPortada, TIPOS_PERMITIDOS } from "./imagen";
+import { direccionDesdeCoordenadas } from "./geocodificar";
 import {
   aSolicitud,
   bloqueosDe,
@@ -60,6 +61,31 @@ export function FormularioEvento({ evento, categorias, portadaActual }: Props) {
   const entradaArchivo = useRef<HTMLInputElement>(null);
   const bloqueos = useMemo(() => bloqueosDe(evento), [evento]);
   const hoy = useMemo(() => hoyEnZona(), []);
+  // Dirección que entregó el mapa; si después se edita a mano, se ofrece «Usar la dirección del mapa».
+  const [direccionDelMapa, setDireccionDelMapa] = useState<{ direccion: string; ciudad: string } | null>(null);
+  const [buscandoDireccion, setBuscandoDireccion] = useState(false);
+  const consultaDireccion = useRef<AbortController | null>(null);
+
+  const fijarUbicacion = (latitud: number, longitud: number) => {
+    setValores((actual) => ({ ...actual, latitud, longitud }));
+    setErrores((actual) => ({ ...actual, latitud: undefined }));
+    consultaDireccion.current?.abort();
+    const control = new AbortController();
+    consultaDireccion.current = control;
+    setBuscandoDireccion(true);
+    void direccionDesdeCoordenadas(latitud, longitud, control.signal).then((encontrada) => {
+      if (control.signal.aborted) return;
+      setBuscandoDireccion(false);
+      if (!encontrada) return;
+      setDireccionDelMapa(encontrada);
+      // Como en la app: la dirección del punto sustituye lo escrito en «Dirección» y «Ciudad».
+      setValores((actual) => ({
+        ...actual,
+        direccion: encontrada.direccion || actual.direccion,
+        ciudad: encontrada.ciudad || actual.ciudad,
+      }));
+    });
+  };
 
   useEffect(() => () => {
     if (portada) URL.revokeObjectURL(portada.vista);
@@ -224,7 +250,25 @@ export function FormularioEvento({ evento, categorias, portadaActual }: Props) {
       <Tarjeta className="flex flex-col gap-4">
         <h2 className="text-xl font-semibold text-tinta">Lugar</h2>
         <Campo etiqueta="Sede" value={valores.lugar} onChange={(e) => cambiar("lugar", e.target.value)} maxLength={160} required error={errores.lugar} placeholder="Foro Cultural Orizaba" />
-        <Campo etiqueta="Dirección" value={valores.direccion} onChange={(e) => cambiar("direccion", e.target.value)} maxLength={240} error={errores.direccion} placeholder="Sur 5 120, Centro" />
+        <Campo
+          etiqueta="Dirección"
+          value={valores.direccion}
+          onChange={(e) => cambiar("direccion", e.target.value)}
+          maxLength={240}
+          error={errores.direccion}
+          placeholder="Sur 5 120, Centro"
+          ayuda={buscandoDireccion ? "Buscando la dirección del punto del mapa…" : undefined}
+        />
+        {direccionDelMapa && direccionDelMapa.direccion && valores.direccion !== direccionDelMapa.direccion ? (
+          <Boton
+            variante="contorno"
+            tamano="compacto"
+            className="self-start"
+            onClick={() => setValores((actual) => ({ ...actual, direccion: direccionDelMapa.direccion, ciudad: direccionDelMapa.ciudad || actual.ciudad }))}
+          >
+            Usar la dirección del mapa
+          </Boton>
+        ) : null}
         <Campo etiqueta="Ciudad" value={valores.ciudad} onChange={(e) => cambiar("ciudad", e.target.value)} maxLength={80} />
         <div className="flex flex-col gap-2">
           <p className="text-sm font-medium text-tinta">Ubicación exacta</p>
@@ -236,10 +280,7 @@ export function FormularioEvento({ evento, categorias, portadaActual }: Props) {
               nombre={valores.nombre || "Ubicación del evento"}
               zoom={valores.latitud != null ? 16 : 14}
               editable
-              onMover={(latitud, longitud) => {
-                setValores((actual) => ({ ...actual, latitud, longitud }));
-                setErrores((actual) => ({ ...actual, latitud: undefined }));
-              }}
+              onMover={fijarUbicacion}
             />
           </div>
           <div className="flex flex-wrap items-center gap-3">
@@ -249,13 +290,7 @@ export function FormularioEvento({ evento, categorias, portadaActual }: Props) {
               icono={<LocateFixed className="size-4" aria-hidden="true" />}
               onClick={() =>
                 navigator.geolocation?.getCurrentPosition(
-                  (posicion) => {
-                    setValores((actual) => ({
-                      ...actual,
-                      latitud: Math.round(posicion.coords.latitude * 1e5) / 1e5,
-                      longitud: Math.round(posicion.coords.longitude * 1e5) / 1e5,
-                    }));
-                  },
+                  (posicion) => fijarUbicacion(Math.round(posicion.coords.latitude * 1e5) / 1e5, Math.round(posicion.coords.longitude * 1e5) / 1e5),
                   () => setErrores((actual) => ({ ...actual, latitud: "No se pudo leer tu ubicación. Toca el mapa para fijarla." })),
                 )
               }

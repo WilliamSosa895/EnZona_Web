@@ -21,6 +21,9 @@ export const metadata: Metadata = {
   icons: { icon: "/icon.svg" },
 };
 
+/** La API en Render puede tardar en despertar: se da margen a las funciones de servidor. */
+export const maxDuration = 60;
+
 export const viewport: Viewport = {
   themeColor: "#eef1f6",
   width: "device-width",
