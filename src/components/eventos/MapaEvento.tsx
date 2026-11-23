@@ -33,7 +33,14 @@ export function MapaEvento({ latitud, longitud, nombre, direccion }: PropsMapa) 
       </div>
       <div className="flex items-center gap-4">
         <BotonEnlace
-          href={typeof navigator !== "undefined" && /Android|iPhone|iPad/i.test(navigator.userAgent) ? geo : destino}
+          href={destino}
+          onClick={(evento) => {
+            // En teléfonos abre la app de mapas con geo:; el servidor siempre renderiza OpenStreetMap
+            if (/Android|iPhone|iPad/i.test(navigator.userAgent)) {
+              evento.preventDefault();
+              window.location.href = geo;
+            }
+          }}
           variante="contorno"
           icono={<Navigation className="size-5" aria-hidden="true" />}
           className="flex-1"

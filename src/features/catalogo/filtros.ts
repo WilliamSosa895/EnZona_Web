@@ -27,6 +27,9 @@ export const FILTROS_FECHA: { valor: FiltroFecha; texto: string }[] = [
   { valor: "proximo-mes", texto: "Próximo mes" },
 ];
 
+/** Zonas de muestra del diálogo «¿En qué zona buscas?» (fixture de la app, no un catálogo real). */
+export const ZONAS_DE_MUESTRA = ["Orizaba, Veracruz", "Córdoba, Veracruz", "Fortín, Veracruz", "Xalapa, Veracruz", "Veracruz, Veracruz"] as const;
+
 export function ciudadDe(parametros: ParametrosInicio): string {
   return parametros.zona?.trim() || CIUDAD_POR_DEFECTO;
 }
@@ -58,7 +61,8 @@ export function normalizarCiudad(texto: string | null | undefined): string {
  */
 export function coincideCiudad(ciudadEvento: string | null | undefined, zona: string): boolean {
   const a = normalizarCiudad(ciudadEvento);
-  const b = normalizarCiudad(zona);
+  // De «Córdoba, Veracruz» solo cuenta la ciudad: el estado lo comparten todas las zonas
+  const b = normalizarCiudad(zona.split(",")[0]);
   if (!a || !b) return true;
   return a.includes(b) || b.includes(a);
 }

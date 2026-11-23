@@ -6,7 +6,7 @@ import { cn } from "@/lib/cn";
  * integra al panel lateral. Siempre muestra el total final y una sola acción
  * destacada en coral.
  */
-export function BarraCompra({ resumen, accion, className }: { resumen: ReactNode; accion: ReactNode; className?: string }) {
+export function BarraCompra({ resumen, accion, className, guia }: { resumen: ReactNode; accion: ReactNode; className?: string; guia?: string }) {
   return (
     <div
       className={cn(
@@ -17,7 +17,7 @@ export function BarraCompra({ resumen, accion, className }: { resumen: ReactNode
     >
       <div className="mx-auto flex max-w-6xl flex-col gap-3 lg:max-w-none">
         <p className="text-[17px] font-semibold text-tinta">{resumen}</p>
-        {accion}
+        <div data-guia={guia}>{accion}</div>
       </div>
     </div>
   );

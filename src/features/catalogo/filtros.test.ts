@@ -38,6 +38,8 @@ describe("filtros de Inicio (RF-05 a RF-07, RF-19)", () => {
     expect(normalizarCiudad("Córdoba-Orizaba ")).toBe("cordoba orizaba");
     expect(coincideCiudad("Cordoba-Orizaba", "Orizaba")).toBe(true);
     expect(coincideCiudad("Orizaba, Veracruz", "orizaba")).toBe(true);
+    expect(coincideCiudad("Cordoba-Orizaba", "Córdoba, Veracruz")).toBe(true);
+    expect(coincideCiudad("Xalapa", "Córdoba, Veracruz")).toBe(false);
     expect(coincideCiudad("Xalapa", "Orizaba")).toBe(false);
     expect(coincideCiudad(null, "Orizaba")).toBe(true);
   });

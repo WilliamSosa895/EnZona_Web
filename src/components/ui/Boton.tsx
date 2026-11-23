@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { ButtonHTMLAttributes, ReactNode } from "react";
+import type { ButtonHTMLAttributes, MouseEventHandler, ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
 /*
@@ -78,6 +78,7 @@ export function Boton({
 interface PropsEnlace extends PropsBase {
   href: string;
   prefetch?: boolean;
+  onClick?: MouseEventHandler<HTMLAnchorElement>;
 }
 
 export function BotonEnlace({
@@ -89,11 +90,13 @@ export function BotonEnlace({
   className,
   children,
   prefetch,
+  onClick,
 }: PropsEnlace) {
   return (
     <Link
       href={href}
       prefetch={prefetch}
+      onClick={onClick}
       className={cn(BASE, VARIANTES[variante], TAMANOS[tamano], ancho && "w-full", className)}
     >
       {icono}

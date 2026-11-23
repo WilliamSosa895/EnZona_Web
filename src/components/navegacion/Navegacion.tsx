@@ -22,6 +22,8 @@ interface Destino {
   texto: string;
   icono: typeof Home;
   activo: (ruta: string) => boolean;
+  /** Clave `data-guia` para las guías de la primera vez. */
+  guia?: string;
 }
 
 const INICIO: Destino = { href: RUTAS.inicio, texto: "Inicio", icono: Home, activo: (r) => r === "/" || r.startsWith("/evento") || r.startsWith("/notificaciones") };
@@ -29,6 +31,7 @@ const MIS_BOLETOS: Destino = {
   href: RUTAS.misBoletos,
   texto: "Mis boletos",
   icono: Ticket,
+  guia: "nav_boletos",
   activo: (r) => r.startsWith("/mis-boletos") || r.startsWith("/boleto") || r.startsWith("/orden"),
 };
 const MIS_EVENTOS: Destino = { href: RUTAS.misEventos, texto: "Mis eventos", icono: CalendarDays, activo: (r) => r.startsWith("/mis-eventos") };
@@ -83,6 +86,7 @@ export function Cabecera({ roles, accesoPersonal, conSesion, nombre }: PropsNave
               <Link
                 key={destino.href}
                 href={destino.href}
+                data-guia={destino.guia}
                 aria-current={activo ? "page" : undefined}
                 className={cn(
                   "nav-vivo flex h-11 items-center gap-2 rounded-pildora px-4 text-[15px] font-medium",
@@ -116,6 +120,7 @@ export function BarraInferior({ roles, accesoPersonal, conSesion }: PropsNavegac
             <li key={destino.href} className="flex min-w-0 flex-1">
               <Link
                 href={destino.href}
+                data-guia={destino.guia}
                 aria-current={activo ? "page" : undefined}
                 className="flex min-w-0 flex-1 flex-col items-center justify-center gap-1 px-0.5 text-[11px] font-medium"
               >

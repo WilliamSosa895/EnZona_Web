@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ChevronRight, CircleHelp, FileText, Globe, LocateFixed, MapPin, Megaphone, Scale, ShieldCheck, UserPen } from "lucide-react";
+import { ChevronRight, CircleHelp, FileText, Globe, LocateFixed, MapPin, Megaphone, ShieldAlert, ShieldCheck, UserPen } from "lucide-react";
 import { Cascaron } from "@/components/navegacion/Cascaron";
 import { TituloPagina } from "@/components/ui/Estados";
 import { EtiquetaRol } from "@/components/ui/Etiquetas";
@@ -10,6 +10,7 @@ import { RUTAS } from "@/lib/rutas";
 import { exigirSesion } from "@/lib/sesion/servidor";
 import { misEventos } from "@/features/eventos/api";
 import { BotonCerrarSesion, TarjetaRolOrganizador } from "@/features/cuenta/AccionesCuenta";
+import { FilaReiniciarGuias } from "@/features/guias/FilaReiniciarGuias";
 import paquete from "../../../package.json";
 
 export const metadata: Metadata = { title: "Mi cuenta" };
@@ -77,19 +78,21 @@ export default async function PaginaCuenta() {
           <Fila
             icono={<LocateFixed />}
             titulo="Contenido basado en mi ubicación"
-            detalle="Inicio ordena por cercanía al tocar «Cerca de mí»; el permiso se pide en ese momento y no se guarda tu historial."
+            detalle="Se activa con «Cerca de mí» en Inicio"
+            accion={<InterruptorApagado etiqueta="Contenido basado en mi ubicación" />}
           />
         </Grupo>
 
         <Grupo titulo="Preferencias">
           <Fila icono={<UserPen />} titulo="Editar mis datos" detalle="Nombre y teléfono" href={RUTAS.editarDatos} />
-          <Fila icono={<ShieldCheck />} titulo="Seguridad" detalle="Cambiar contraseña y estado de verificación" href={RUTAS.seguridad} />
+          <Fila icono={<ShieldCheck />} titulo="Seguridad" detalle="Contraseña y verificación de la cuenta" href={RUTAS.seguridad} />
         </Grupo>
 
         <Grupo titulo="Ayuda">
-          <Fila icono={<CircleHelp />} titulo="Preguntas frecuentes y contacto" href={RUTAS.ayuda} />
-          <Fila icono={<FileText />} titulo="Aviso de privacidad" detalle="Derechos ARCO (LFPDPPP)" href={RUTAS.privacidad} />
-          <Fila icono={<Scale />} titulo="Legal" detalle="Reembolsos y transparencia de precios" href={RUTAS.legal} />
+          <Fila icono={<CircleHelp />} titulo="¿Necesitas ayuda?" href={RUTAS.ayuda} />
+          <FilaReiniciarGuias usuarioId={usuario.id} />
+          <Fila icono={<ShieldAlert />} titulo="Privacidad" href={RUTAS.privacidad} />
+          <Fila icono={<FileText />} titulo="Legal" href={RUTAS.legal} />
         </Grupo>
 
         {esOrganizador || esAdmin || roles.includes("VALIDADOR") ? (
@@ -116,18 +119,29 @@ function Grupo({ titulo, children }: { titulo: string; children: React.ReactNode
   );
 }
 
+/** Interruptor apagado y sin acción: el permiso de ubicación se da al tocar «Cerca de mí» en Inicio. */
+function InterruptorApagado({ etiqueta }: { etiqueta: string }) {
+  return (
+    <span role="switch" aria-checked="false" aria-disabled="true" aria-label={etiqueta} className="relative h-8 w-14 shrink-0 rounded-pildora bg-tinte-200 opacity-60">
+      <span aria-hidden="true" className="absolute top-1 left-0 size-6 translate-x-1 rounded-full bg-blanco shadow-tarjeta" />
+    </span>
+  );
+}
+
 function Fila({
   icono,
   titulo,
   detalle,
   valor,
   href,
+  accion,
 }: {
   icono: React.ReactNode;
   titulo: string;
   detalle?: string;
   valor?: string;
   href?: string;
+  accion?: React.ReactNode;
 }) {
   const contenido = (
     <>
@@ -139,6 +153,7 @@ function Fila({
         {detalle ? <span className="text-[15px] text-gris-texto">{detalle}</span> : null}
       </span>
       {valor ? <span className="text-[15px] text-profundo">{valor}</span> : null}
+      {accion}
       {href ? <ChevronRight className="size-5 shrink-0 text-gris-texto" aria-hidden="true" /> : null}
     </>
   );

@@ -13,7 +13,7 @@ import { LogoEnZona } from "@/components/marca/LogoEnZona";
 import { CampanaBoleto } from "@/components/marca/CampanaBoleto";
 import Link from "next/link";
 import { RUTAS } from "@/lib/rutas";
-import { FILTROS_FECHA, contarFiltrosActivos, type ParametrosInicio } from "./filtros";
+import { FILTROS_FECHA, ZONAS_DE_MUESTRA, contarFiltrosActivos, type ParametrosInicio } from "./filtros";
 
 /*
  * Cabecera de Inicio: zona (ciudad a mano, RNF-11), búsqueda por texto y los
@@ -116,6 +116,7 @@ export function FilaFiltros({ parametros, categorias, lugares }: Props) {
         <button
           type="button"
           onClick={() => setZonaAbierta(true)}
+          data-guia="inicio_zona"
           className="chip-vivo flex h-11 cursor-pointer items-center gap-2 rounded-pildora px-2 text-[17px] text-tinta hover:bg-tinte-50"
           aria-label={`Zona: ${parametros.zona || CIUDAD_POR_DEFECTO}. Cambiar zona`}
         >
@@ -125,7 +126,7 @@ export function FilaFiltros({ parametros, categorias, lugares }: Props) {
         </button>
       </div>
 
-      <div className="relative">
+      <div className="relative" data-guia="inicio_busqueda">
         <Search className="pointer-events-none absolute inset-y-0 left-5 my-auto size-6 text-gris-texto" aria-hidden="true" />
         <input
           type="search"
@@ -137,7 +138,7 @@ export function FilaFiltros({ parametros, categorias, lugares }: Props) {
         />
       </div>
 
-      <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sin-scrollbar sm:mx-0 sm:flex-wrap sm:px-0">
+      <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sin-scrollbar sm:mx-0 sm:flex-wrap sm:px-0" data-guia="inicio_filtros">
         <Chip
           activo={conUbicacion}
           onClick={pedirUbicacion}
@@ -343,29 +344,59 @@ function DialogoZona({
   zonaActual: string;
   onGuardar: (zona: string) => void;
 }) {
-  const [zona, setZona] = useState(zonaActual);
+  const [texto, setTexto] = useState("");
+  const actual = zonaActual || ZONAS_DE_MUESTRA[0];
+  // La zona por defecto se guarda vacía (Orizaba); las demás, con su texto completo
+  const elegir = (zona: string) => onGuardar(zona === ZONAS_DE_MUESTRA[0] ? "" : zona);
   return (
     <Dialogo
       abierto={abierto}
       onCerrar={onCerrar}
-      titulo="Tu zona"
+      titulo="¿En qué zona buscas?"
       acciones={
         <>
-          <Boton variante="contorno" onClick={() => onGuardar("")}>
-            Usar {CIUDAD_POR_DEFECTO}
+          <Boton variante="texto" onClick={onCerrar}>
+            Cancelar
           </Boton>
-          <Boton onClick={() => onGuardar(zona.trim())}>Guardar</Boton>
+          <Boton variante="texto" disabled={texto.trim() === ""} onClick={() => elegir(texto.trim())}>
+            Usar esta zona
+          </Boton>
         </>
       }
     >
-      <p>Los eventos se filtran por la ciudad que elijas. Escribe el nombre tal como aparece en los eventos.</p>
+      <p>Elige una zona o escribe la tuya. No hace falta activar la ubicación del teléfono.</p>
+      <ul className="-mx-2 flex flex-col">
+        {ZONAS_DE_MUESTRA.map((zona) => {
+          const elegida = zona === actual;
+          return (
+            <li key={zona}>
+              <button
+                type="button"
+                onClick={() => elegir(zona)}
+                aria-current={elegida ? "true" : undefined}
+                className="flex h-control w-full cursor-pointer items-center justify-between gap-3 rounded-campo px-2 text-left text-[17px] text-tinta hover:bg-superficie-alta"
+              >
+                <span>{zona}</span>
+                {elegida ? <Check className="size-5 text-marino" aria-label="Zona actual" /> : null}
+              </button>
+            </li>
+          );
+        })}
+      </ul>
       <Campo
-        etiqueta="Ciudad"
-        value={zona}
-        onChange={(evento) => setZona(evento.target.value)}
-        placeholder={CIUDAD_POR_DEFECTO}
-        autoFocus
+        etiqueta="Otra ciudad o colonia"
+        value={texto}
+        onChange={(evento) => setTexto(evento.target.value)}
+        onKeyDown={(evento) => {
+          if (evento.key === "Enter" && texto.trim() !== "") {
+            evento.preventDefault();
+            elegir(texto.trim());
+          }
+        }}
       />
+      <p className="text-sm">
+        El área de estudio es {CIUDAD_POR_DEFECTO}. Si eliges otra ciudad y no hay eventos, podrás volver a {CIUDAD_POR_DEFECTO} desde aquí.
+      </p>
     </Dialogo>
   );
 }

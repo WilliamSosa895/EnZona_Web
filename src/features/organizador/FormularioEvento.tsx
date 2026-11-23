@@ -15,6 +15,8 @@ import { AreaTexto, Campo, Interruptor, Selector } from "@/components/ui/Campo";
 import { Esqueleto } from "@/components/ui/Estados";
 import { Aviso, Tarjeta } from "@/components/ui/Superficies";
 import { estiloDeCategoria } from "@/components/eventos/Portada";
+import { GuiaDePantalla } from "@/features/guias/GuiaDePantalla";
+import { PASOS_NUEVO_EVENTO } from "@/features/guias/pasos";
 import { guardarEvento, publicarEvento, quitarPortada, subirPortada } from "./acciones";
 import { prepararPortada, TIPOS_PERMITIDOS } from "./imagen";
 import { direccionDesdeCoordenadas } from "./geocodificar";
@@ -163,11 +165,12 @@ export function FormularioEvento({ evento, categorias, portadaActual }: Props) {
       }}
     >
       {errorGeneral ? <Aviso tono="error">{errorGeneral}</Aviso> : null}
+      <GuiaDePantalla clave="nuevo_evento" activa={!evento} pasos={PASOS_NUEVO_EVENTO} />
 
       <Campo etiqueta="Nombre del evento" value={valores.nombre} onChange={(e) => cambiar("nombre", e.target.value)} maxLength={160} required error={errores.nombre} />
       <AreaTexto etiqueta="Descripción" value={valores.descripcion} onChange={(e) => cambiar("descripcion", e.target.value)} maxLength={5000} error={errores.descripcion} ayuda="Cuenta de qué trata, para quién es y qué incluye." />
 
-      <Tarjeta className="flex flex-col gap-3">
+      <Tarjeta className="flex flex-col gap-3" data-guia="evento_portada">
         <h2 className="text-xl font-semibold text-tinta">Portada</h2>
         <div className={cn("relative aspect-video w-full overflow-hidden rounded-campo", estiloCategoria.fondo)}>
           {portada ? (
@@ -215,7 +218,7 @@ export function FormularioEvento({ evento, categorias, portadaActual }: Props) {
         </p>
       </Tarjeta>
 
-      <Tarjeta className="flex flex-col gap-4">
+      <Tarjeta className="flex flex-col gap-4" data-guia="evento_fecha">
         <h2 className="text-xl font-semibold text-tinta">Fecha y hora</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Campo etiqueta="Fecha de inicio" type="date" min={hoy} value={valores.fechaInicio} onChange={(e) => cambiar("fechaInicio", e.target.value)} required error={errores.fechaInicio} />
@@ -247,7 +250,7 @@ export function FormularioEvento({ evento, categorias, portadaActual }: Props) {
         ) : null}
       </Tarjeta>
 
-      <Tarjeta className="flex flex-col gap-4">
+      <Tarjeta className="flex flex-col gap-4" data-guia="evento_ubicacion">
         <h2 className="text-xl font-semibold text-tinta">Lugar</h2>
         <Campo etiqueta="Sede" value={valores.lugar} onChange={(e) => cambiar("lugar", e.target.value)} maxLength={160} required error={errores.lugar} placeholder="Foro Cultural Orizaba" />
         <Campo
@@ -314,7 +317,7 @@ export function FormularioEvento({ evento, categorias, portadaActual }: Props) {
         opciones={categorias.map((categoria) => ({ valor: String(categoria.id), texto: categoria.nombre }))}
       />
 
-      <Tarjeta className="flex flex-col gap-4">
+      <Tarjeta className="flex flex-col gap-4" data-guia="evento_pago">
         <h2 className="text-xl font-semibold text-tinta">Boletos</h2>
         <Interruptor
           etiqueta="Evento de pago"
@@ -355,7 +358,7 @@ export function FormularioEvento({ evento, categorias, portadaActual }: Props) {
         ) : null}
       </Tarjeta>
 
-      <Tarjeta className="flex flex-col gap-4">
+      <Tarjeta className="flex flex-col gap-4" data-guia="evento_asientos">
         <h2 className="text-xl font-semibold text-tinta">Aforo y asientos</h2>
         <Interruptor
           etiqueta="¿Este evento requiere asientos?"
@@ -400,7 +403,7 @@ export function FormularioEvento({ evento, categorias, portadaActual }: Props) {
 
       {faltantes.length > 0 ? <p className="text-[15px] text-gris-texto">Para publicar falta: {faltantes.join(", ")}.</p> : null}
 
-      <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+      <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end" data-guia="evento_acciones">
         <Boton type="submit" variante="contorno" tamano="grande" cargando={guardando} textoCargando="Guardando…">
           {evento ? "Guardar cambios" : "Guardar como borrador"}
         </Boton>

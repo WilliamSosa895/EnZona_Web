@@ -28,6 +28,7 @@ export async function Cascaron({ children, sinBarraInferior, ancho = "normal", c
       <main
         id="contenido"
         tabIndex={-1}
+        data-usuario={sesion?.usuario.id}
         className={cn(
           "mx-auto w-full flex-1 px-4 pt-4 sm:px-6 md:pt-8",
           ANCHOS[ancho],

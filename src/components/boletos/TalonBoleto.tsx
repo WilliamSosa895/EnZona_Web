@@ -85,7 +85,7 @@ export function TalonBoleto({ boleto, evento, posicion }: Props) {
       <div aria-hidden="true" className="mx-6 border-t-2 border-dashed border-linea" />
 
       <div className="flex flex-col items-center gap-3 px-6 pt-6 pb-7">
-        <div className="qr-vivo">
+        <div className="qr-vivo" data-guia="boleto_qr">
           <CodigoQr contenido={contenido} anulado={anulado} />
         </div>
         <p className="font-mono text-xl font-semibold tracking-wider text-tinta">{boleto.codigo}</p>
