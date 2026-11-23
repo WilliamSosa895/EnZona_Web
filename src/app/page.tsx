@@ -61,7 +61,13 @@ async function Catalogo({ parametros }: { parametros: ParametrosInicio }) {
       ) : eventos.length === 0 ? (
         <EstadoVacio
           icono={<CalendarX2 />}
-          titulo={todos.length === 0 ? "Aún no hay eventos publicados en esta zona" : "Ningún evento coincide con los filtros"}
+          titulo={
+            todos.length === 0
+              ? "Aún no hay eventos publicados"
+              : parametros.zona
+                ? `No hay eventos publicados en ${parametros.zona}`
+                : "Ningún evento coincide con los filtros"
+          }
           descripcion={
             tieneUbicacion(parametros)
               ? "Prueba a quitar «Cerca de mí» o explora los eventos de Orizaba."

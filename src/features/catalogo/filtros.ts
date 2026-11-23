@@ -41,12 +41,38 @@ function numeroValido(texto: string | undefined): number | null {
   return Number.isFinite(valor) ? valor : null;
 }
 
-/** Traduce los parámetros de la URL a la consulta de la API. */
+/** Texto sin acentos, en minúsculas y con separadores unificados, para comparar ciudades. */
+export function normalizarCiudad(texto: string | null | undefined): string {
+  return (texto ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+/**
+ * Una ciudad del evento coincide con la zona si una contiene a la otra
+ * («Cordoba-Orizaba» y «Orizaba» coinciden). La API compara el texto exacto,
+ * así que la zona se aplica aquí y no en la consulta.
+ */
+export function coincideCiudad(ciudadEvento: string | null | undefined, zona: string): boolean {
+  const a = normalizarCiudad(ciudadEvento);
+  const b = normalizarCiudad(zona);
+  if (!a || !b) return true;
+  return a.includes(b) || b.includes(a);
+}
+
+/**
+ * Traduce los parámetros de la URL a la consulta de la API. La ciudad no se
+ * envía: la API exige coincidencia exacta y ocultaría eventos escritos como
+ * «Cordoba-Orizaba»; se filtra en el cliente con `coincideCiudad`.
+ */
 export function aFiltrosApi(parametros: ParametrosInicio, ahora: Date = new Date()): FiltrosCatalogo {
   const rango = parametros.fecha ? rangoDeFiltro(parametros.fecha, ahora) : null;
   const categoriaId = parametros.tipo ? Number.parseInt(parametros.tipo, 10) : null;
   return {
-    ciudad: ciudadDe(parametros),
+    ciudad: null,
     lat: numeroValido(parametros.lat),
     lng: numeroValido(parametros.lng),
     q: parametros.q?.trim() || null,
@@ -57,11 +83,17 @@ export function aFiltrosApi(parametros: ParametrosInicio, ahora: Date = new Date
   };
 }
 
-/** Filtros que la API no aplica (lugar) o que conviene reafirmar en el cliente (fecha). */
+/**
+ * Filtros que la API no aplica (lugar, zona tolerante) o que conviene reafirmar
+ * en el cliente (fecha). Con ubicación activa la zona no se aplica: la API ya
+ * ordenó por cercanía dentro del radio.
+ */
 export function filtrarEnCliente(eventos: EventoDto[], parametros: ParametrosInicio, ahora: Date = new Date()): EventoDto[] {
   const lugar = parametros.lugar?.trim().toLowerCase();
   const rango = parametros.fecha ? rangoDeFiltro(parametros.fecha, ahora) : null;
+  const zona = tieneUbicacion(parametros) ? null : ciudadDe(parametros);
   return eventos.filter((evento) => {
+    if (zona && !coincideCiudad(evento.ciudad, zona)) return false;
     if (lugar && evento.lugar.trim().toLowerCase() !== lugar) return false;
     if (rango && !enRango(evento.fechaHoraInicio, rango)) return false;
     return true;

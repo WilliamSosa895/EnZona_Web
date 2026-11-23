@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { EventoDto } from "@/lib/api/tipos";
-import { aFiltrosApi, ciudadDe, contarFiltrosActivos, filtrarEnCliente, lugaresDe, tieneUbicacion } from "./filtros";
+import { aFiltrosApi, ciudadDe, coincideCiudad, contarFiltrosActivos, filtrarEnCliente, lugaresDe, normalizarCiudad, tieneUbicacion } from "./filtros";
 
 const evento = (id: number, lugar: string, fecha: string): EventoDto => ({
   id,
@@ -19,8 +19,8 @@ describe("filtros de Inicio (RF-05 a RF-07, RF-19)", () => {
     expect(ciudadDe({ zona: "Córdoba" })).toBe("Córdoba");
   });
 
-  it("manda ciudad a la API sin ubicación y coordenadas con ella (CP-17, CP-18)", () => {
-    expect(aFiltrosApi({ zona: "Orizaba" })).toMatchObject({ ciudad: "Orizaba", lat: null, lng: null });
+  it("no manda la ciudad a la API (coincidencia exacta) y sí las coordenadas (CP-17, CP-18)", () => {
+    expect(aFiltrosApi({ zona: "Orizaba" })).toMatchObject({ ciudad: null, lat: null, lng: null });
     const conGps = aFiltrosApi({ lat: "18.851", lng: "-97.1" });
     expect(conGps.lat).toBeCloseTo(18.851);
     expect(conGps.lng).toBeCloseTo(-97.1);
@@ -32,6 +32,24 @@ describe("filtros de Inicio (RF-05 a RF-07, RF-19)", () => {
     expect(aFiltrosApi({ pago: "gratis" }).esDePago).toBe(false);
     expect(aFiltrosApi({ pago: "de-pago" }).esDePago).toBe(true);
     expect(aFiltrosApi({}).esDePago).toBeNull();
+  });
+
+  it("compara la zona sin acentos ni guiones y por contención («Cordoba-Orizaba» es Orizaba)", () => {
+    expect(normalizarCiudad("Córdoba-Orizaba ")).toBe("cordoba orizaba");
+    expect(coincideCiudad("Cordoba-Orizaba", "Orizaba")).toBe(true);
+    expect(coincideCiudad("Orizaba, Veracruz", "orizaba")).toBe(true);
+    expect(coincideCiudad("Xalapa", "Orizaba")).toBe(false);
+    expect(coincideCiudad(null, "Orizaba")).toBe(true);
+  });
+
+  it("aplica la zona en el cliente salvo con ubicación activa", () => {
+    const eventos = [
+      { ...evento(1, "Foro", "2030-01-10T19:00:00-06:00"), ciudad: "Cordoba-Orizaba" },
+      { ...evento(2, "Teatro", "2030-01-10T19:00:00-06:00"), ciudad: "Xalapa" },
+    ];
+    expect(filtrarEnCliente(eventos, {}).map((item) => item.id)).toEqual([1]);
+    expect(filtrarEnCliente(eventos, { zona: "Xalapa" }).map((item) => item.id)).toEqual([2]);
+    expect(filtrarEnCliente(eventos, { lat: "18.85", lng: "-97.1" }).map((item) => item.id)).toEqual([1, 2]);
   });
 
   it("filtra por lugar en el cliente y lista las sedes", () => {
