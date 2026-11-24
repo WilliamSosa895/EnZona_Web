@@ -1,6 +1,6 @@
 {
   "name": "enzona-web",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "description": "EnZona web: eventos cerca de ti con boletos QR. Cliente web de EnZona_Api.",
   "scripts": {
