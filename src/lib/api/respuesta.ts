@@ -90,12 +90,32 @@ export async function procesarLista<T>(respuesta: Response): Promise<ListaPagina
   return { elementos: lista, paginacion: leerPaginacion(respuesta.headers, lista.length) };
 }
 
-/** Ejecuta `fetch` traduciendo fallos de red a `ErrorEnZona` sin conexión. */
+const TIEMPO_LIMITE_MS = 25_000;
+const ESPERA_REINTENTO_MS = 1_500;
+
+function conLimite(peticion: RequestInit): RequestInit {
+  const limite = AbortSignal.timeout(TIEMPO_LIMITE_MS);
+  const signal = peticion.signal ? AbortSignal.any([peticion.signal, limite]) : limite;
+  return { ...peticion, signal };
+}
+
+/**
+ * Ejecuta `fetch` traduciendo fallos de red a `ErrorEnZona` sin conexión. Las
+ * lecturas (GET) se reintentan una vez: la API en Render tarda en despertar y
+ * una primera petición fallida no debe vaciar la pantalla.
+ */
 export async function pedir(url: string, peticion: RequestInit): Promise<Response> {
-  try {
-    return await fetch(url, peticion);
-  } catch (error) {
-    if (error instanceof ErrorEnZona) throw error;
-    throw errorSinConexion();
+  const metodo = (peticion.method ?? "GET").toUpperCase();
+  const intentos = metodo === "GET" ? 2 : 1;
+  for (let intento = 1; intento <= intentos; intento += 1) {
+    try {
+      return await fetch(url, conLimite(peticion));
+    } catch (error) {
+      if (error instanceof ErrorEnZona) throw error;
+      if (peticion.signal?.aborted) throw error;
+      if (intento === intentos) throw errorSinConexion();
+      await new Promise((resolver) => setTimeout(resolver, ESPERA_REINTENTO_MS));
+    }
   }
+  throw errorSinConexion();
 }

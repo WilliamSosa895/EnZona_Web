@@ -8,6 +8,8 @@ import { cn } from "@/lib/cn";
 import { importeMxn, totalDe } from "@/lib/formato";
 import { RUTAS } from "@/lib/rutas";
 import { Boton, BotonEnlace } from "@/components/ui/Boton";
+import { GuiaDePantalla } from "@/features/guias/GuiaDePantalla";
+import { PASOS_ASIENTOS } from "@/features/guias/pasos";
 import { Aviso } from "@/components/ui/Superficies";
 import { BarraCompra } from "@/components/compra/BarraCompra";
 import { etiquetaCorta, etiquetaLarga, faltanAsientos } from "./reglas";
@@ -106,6 +108,7 @@ export function PlanoAsientos({ evento, tipo, cantidad, asientos }: Props) {
         </p>
       </div>
 
+      <GuiaDePantalla clave="asientos" pasos={PASOS_ASIENTOS} />
       <section aria-live="polite" className="flex flex-col gap-2">
         <h2 className="text-xl font-semibold text-tinta">
           Seleccionados {seleccion.length} de {cantidad}
@@ -137,7 +140,7 @@ export function PlanoAsientos({ evento, tipo, cantidad, asientos }: Props) {
 
       {aviso ? <Aviso tono="aviso">{aviso}</Aviso> : null}
 
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[15px] text-tinta" aria-label="Leyenda">
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[15px] text-tinta" aria-label="Leyenda" data-guia="asientos_leyenda">
         <span className="flex items-center gap-2">
           <span className="flex size-7 items-center justify-center rounded-md border-2 border-profundo bg-superficie text-xs font-semibold" aria-hidden="true">7</span>
           Libre
@@ -160,7 +163,7 @@ export function PlanoAsientos({ evento, tipo, cantidad, asientos }: Props) {
             elegirPorNumero();
           }}
         >
-          <label className="relative flex min-w-0 flex-1 items-center">
+          <label className="relative flex min-w-0 flex-1 items-center" data-guia="asientos_por_numero">
             <Armchair className="pointer-events-none absolute left-4 size-5 text-gris-texto" aria-hidden="true" />
             <span className="sr-only">Elegir asiento por número</span>
             <input
@@ -174,7 +177,7 @@ export function PlanoAsientos({ evento, tipo, cantidad, asientos }: Props) {
             Elegir
           </Boton>
         </form>
-        <div className="flex items-center gap-2" role="group" aria-label="Zoom del plano">
+        <div className="flex items-center gap-2" role="group" aria-label="Zoom del plano" data-guia="asientos_zoom">
           <BotonZoom etiqueta="Alejar" onClick={() => setZoom((valor) => Math.max(0.7, +(valor - 0.15).toFixed(2)))}>
             <Minus className="size-5" aria-hidden="true" />
           </BotonZoom>
@@ -187,7 +190,7 @@ export function PlanoAsientos({ evento, tipo, cantidad, asientos }: Props) {
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-tarjeta bg-superficie-baja p-4" style={{ fontSize: `${zoom}rem` }}>
+      <div className="overflow-x-auto rounded-tarjeta bg-superficie-baja p-4" style={{ fontSize: `${zoom}rem` }} data-guia="asientos_plano">
         <div className="mx-auto flex min-w-max flex-col items-center gap-[1.5em]">
           <div className="w-[min(100%,36em)] rounded-b-[3em] bg-marino py-[0.9em] text-center text-[1.05em] font-semibold text-blanco">
             Escenario
@@ -234,6 +237,7 @@ export function PlanoAsientos({ evento, tipo, cantidad, asientos }: Props) {
             {seleccion.length} de {cantidad} · {importeMxn(total)} · total final
           </>
         }
+        guia="asientos_continuar"
         accion={
           faltan > 0 ? (
             <Boton variante="destacado" tamano="grande" ancho disabled>

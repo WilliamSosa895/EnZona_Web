@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, Pencil } from "lucide-react";
 import { Cascaron } from "@/components/navegacion/Cascaron";
 import { Barra, Indicador } from "@/components/ui/Estados";
+import { GuiaDePantalla } from "@/features/guias/GuiaDePantalla";
+import { pasosPanel } from "@/features/guias/pasos";
 import { Etiqueta, EtiquetaEstadoEvento } from "@/components/ui/Etiquetas";
 import { Aviso, Tarjeta } from "@/components/ui/Superficies";
 import { ErrorEnZona } from "@/lib/api/errores";
@@ -44,8 +46,11 @@ export default async function PaginaPanelEvento({ params }: { params: Promise<{ 
   const esAdmin = sesion.roles.includes("ADMIN");
   const esDueno = evento.organizadorId === sesion.usuario.id;
 
+  const activo = evento.estado !== "CANCELADO" && evento.estado !== "REALIZADO";
+
   return (
     <Cascaron ancho="normal">
+      <GuiaDePantalla clave="panel_evento" pasos={pasosPanel(evento.estado === "CANCELADO", activo && politica !== null)} />
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Link href={RUTAS.misEventos} aria-label="Volver a mis eventos" className="flex size-11 items-center justify-center rounded-pildora text-tinta hover:bg-superficie-alta">
@@ -54,7 +59,7 @@ export default async function PaginaPanelEvento({ params }: { params: Promise<{ 
           <h1 className="text-[2rem] font-bold tracking-tight text-tinta">Panel del evento</h1>
         </div>
         {evento.estado !== "CANCELADO" && evento.estado !== "REALIZADO" ? (
-          <Link href={RUTAS.editarEvento(evento.id)} aria-label="Editar evento" className="flex size-11 items-center justify-center rounded-pildora text-coral hover:bg-coral-suave">
+          <Link href={RUTAS.editarEvento(evento.id)} aria-label="Editar evento" data-guia="panel_editar" className="flex size-11 items-center justify-center rounded-pildora text-coral hover:bg-coral-suave">
             <Pencil className="size-6" />
           </Link>
         ) : null}
@@ -86,7 +91,7 @@ export default async function PaginaPanelEvento({ params }: { params: Promise<{ 
 
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start">
         <div className="flex flex-col gap-6">
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 gap-3" data-guia="panel_metricas">
             <Indicador valor={emitidos} etiqueta="Asistentes" />
             <Indicador valor={validados} etiqueta="Validados" />
             <Indicador valor={importe(reporte?.ingresos ?? 0).replace(".00", "")} etiqueta="Ingresos" />
@@ -114,7 +119,7 @@ export default async function PaginaPanelEvento({ params }: { params: Promise<{ 
             </Tarjeta>
           ) : null}
 
-          <section aria-labelledby="boletos-emitidos" className="flex flex-col gap-3">
+          <section aria-labelledby="boletos-emitidos" className="flex flex-col gap-3" data-guia="panel_boletos">
             <h2 id="boletos-emitidos" className="text-xl font-semibold text-tinta">
               Boletos emitidos
             </h2>
@@ -149,15 +154,19 @@ export default async function PaginaPanelEvento({ params }: { params: Promise<{ 
 
         <aside className="flex flex-col gap-6">
           {evento.estado !== "CANCELADO" && evento.estado !== "REALIZADO" ? (
-            <PersonalAcceso eventoId={evento.id} designados={validadores} />
+            <div data-guia="panel_personal">
+              <PersonalAcceso eventoId={evento.id} designados={validadores} />
+            </div>
           ) : null}
           {politica && evento.estado !== "CANCELADO" && evento.estado !== "REALIZADO" ? (
-            <CancelarEvento
-              eventoId={evento.id}
-              nombre={evento.nombre}
-              politica={politica}
-              administrativa={esAdmin && !esDueno}
-            />
+            <div data-guia="panel_cancelar">
+              <CancelarEvento
+                eventoId={evento.id}
+                nombre={evento.nombre}
+                politica={politica}
+                administrativa={esAdmin && !esDueno}
+              />
+            </div>
           ) : null}
         </aside>
       </div>

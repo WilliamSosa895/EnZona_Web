@@ -12,6 +12,8 @@ import { exigirSesion } from "@/lib/sesion/servidor";
 import { agruparPorOrden, boleto as obtenerBoleto, eventoDeBoleto, misBoletos, posicionEnOrden } from "@/features/boletos/api";
 import { cn } from "@/lib/cn";
 import { PantallaEncendida } from "@/features/boletos/PantallaEncendida";
+import { GuiaDePantalla } from "@/features/guias/GuiaDePantalla";
+import { PASOS_BOLETO } from "@/features/guias/pasos";
 
 export const metadata: Metadata = { title: "Tu boleto" };
 
@@ -61,11 +63,15 @@ export default async function PaginaBoleto({ params }: { params: Promise<{ id: s
       ) : null}
 
       <div className="flex flex-col gap-5">
+        <GuiaDePantalla clave="boleto" pasos={PASOS_BOLETO} />
         <TalonBoleto boleto={boleto} evento={evento} posicion={hermanos.length > 1 ? posicion : undefined} />
-        <Aviso tono={estado.tono}>{estado.texto}</Aviso>
+        <div data-guia="boleto_estado">
+          <Aviso tono={estado.tono}>{estado.texto}</Aviso>
+        </div>
         <PantallaEncendida activo={boleto.estado === "VALIDO" && evento?.estado !== "CANCELADO"} />
         <a
           href={enlaceCorreo(boleto, evento)}
+          data-guia="boleto_correo"
           className="inline-flex h-control w-full items-center justify-center gap-2 rounded-pildora border border-gris-suave px-5 text-[15px] font-medium text-tinta hover:bg-superficie-alta"
         >
           <Mail className="size-5" aria-hidden="true" />

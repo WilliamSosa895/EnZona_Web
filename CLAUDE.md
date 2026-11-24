@@ -37,6 +37,7 @@ src/
   components/boletos      TalonBoleto (talón con muescas), CodigoQr
   components/navegacion   Cascaron (cabecera escritorio + barra inferior móvil por rol)
   features/<dominio>      api.ts (lectura en servidor), acciones.ts (server actions), reglas.ts (lógica pura + tests), componentes cliente
+  features/guias          guías de la primera vez (GuiaDePantalla + data-guia en cada pantalla; vistas por cuenta en localStorage)
   lib/api                 tipos.ts (DTO 1:1 con ApiService.kt), errores.ts (RFC 9457 → ErrorEnZona), servidor.ts, navegador.ts
   lib/sesion              cookie httpOnly con el JWT; sesionActual() cacheada por petición
   lib/formato.ts, fecha.ts, capacidades.ts, rutas.ts

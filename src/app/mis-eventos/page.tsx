@@ -4,6 +4,8 @@ import { CalendarPlus, CalendarRange } from "lucide-react";
 import { Cascaron } from "@/components/navegacion/Cascaron";
 import { BotonEnlace } from "@/components/ui/Boton";
 import { Barra, EstadoVacio, Indicador, TituloPagina } from "@/components/ui/Estados";
+import { GuiaDePantalla } from "@/features/guias/GuiaDePantalla";
+import { pasosOrganizador } from "@/features/guias/pasos";
 import { EtiquetaEstadoEvento } from "@/components/ui/Etiquetas";
 import type { EventoDto, ReporteDto } from "@/lib/api/tipos";
 import { aNumero, importe } from "@/lib/formato";
@@ -34,12 +36,15 @@ export default async function PaginaMisEventos() {
         titulo="Mis eventos"
         subtitulo={sesion.usuario.nombre}
         accion={
-          <BotonEnlace href={RUTAS.nuevoEvento} variante="destacado" icono={<CalendarPlus className="size-5" aria-hidden="true" />} className="hidden sm:inline-flex">
-            Nuevo evento
-          </BotonEnlace>
+          <span data-guia="org_nuevo" className="hidden sm:inline-flex">
+            <BotonEnlace href={RUTAS.nuevoEvento} variante="destacado" icono={<CalendarPlus className="size-5" aria-hidden="true" />}>
+              Nuevo evento
+            </BotonEnlace>
+          </span>
         }
       />
-      <div className="mt-6 grid grid-cols-3 gap-3">
+      <GuiaDePantalla clave="organizador" pasos={pasosOrganizador(eventos.length > 0)} />
+      <div className="mt-6 grid grid-cols-3 gap-3" data-guia="org_metricas">
         <Indicador valor={resumen.publicados} etiqueta="Publicados" />
         <Indicador valor={resumen.asistentes} etiqueta="Asistentes" />
         <Indicador valor={importe(resumen.ingresos).replace(".00", "")} etiqueta="Ingresos" />
@@ -58,8 +63,8 @@ export default async function PaginaMisEventos() {
         />
       ) : (
         <ul className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
-          {ordenados.map((evento) => (
-            <li key={evento.id}>
+          {ordenados.map((evento, indice) => (
+            <li key={evento.id} data-guia={indice === 0 ? "org_evento" : undefined}>
               <Link href={RUTAS.panelEvento(evento.id)} className="flex flex-col gap-3 rounded-tarjeta bg-superficie p-5 transition-shadow hover:shadow-tarjeta">
                 <div className="flex items-start justify-between gap-3">
                   <p className="text-xl leading-snug font-semibold text-tinta">{evento.nombre}</p>
@@ -85,6 +90,7 @@ export default async function PaginaMisEventos() {
 
       <Link
         href={RUTAS.nuevoEvento}
+        data-guia="org_nuevo"
         className="fixed right-4 bottom-[calc(var(--barra-inferior)+1rem)] z-20 flex h-14 items-center gap-2 rounded-tarjeta bg-coral px-5 text-[17px] font-medium text-tinta shadow-flotante hover:bg-[#ee5a30] sm:hidden"
       >
         <CalendarPlus className="size-6" aria-hidden="true" />

@@ -117,15 +117,14 @@ export function TarjetaRolOrganizador({ modo, motivoBloqueo }: Props) {
 export function BotonCerrarSesion() {
   const [pendiente, iniciar] = useTransition();
   return (
-    <Boton
-      variante="contorno"
-      ancho
-      icono={<LogOut className="size-5" aria-hidden="true" />}
-      cargando={pendiente}
-      textoCargando="Cerrando sesión…"
+    <button
+      type="button"
+      disabled={pendiente}
       onClick={() => iniciar(async () => cerrarSesion())}
+      className="flex w-full cursor-pointer items-center gap-4 rounded-tarjeta bg-superficie px-5 py-4 text-left text-[17px] text-error hover:bg-superficie-baja disabled:cursor-wait disabled:opacity-60"
     >
-      Cerrar sesión
-    </Boton>
+      <LogOut className="size-6 shrink-0" aria-hidden="true" />
+      <span>{pendiente ? "Cerrando sesión…" : "Cerrar sesión"}</span>
+    </button>
   );
 }

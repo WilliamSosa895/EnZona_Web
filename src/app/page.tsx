@@ -10,6 +10,8 @@ import { ErrorEnZona } from "@/lib/api/errores";
 import { RUTAS } from "@/lib/rutas";
 import { categorias, eventosPublicados } from "@/features/eventos/api";
 import { FilaFiltros } from "@/features/catalogo/FilaFiltros";
+import { GuiaDePantalla } from "@/features/guias/GuiaDePantalla";
+import { PASOS_INICIO } from "@/features/guias/pasos";
 import { aFiltrosApi, filtrarEnCliente, lugaresDe, tieneUbicacion, type ParametrosInicio } from "@/features/catalogo/filtros";
 
 /*
@@ -44,6 +46,7 @@ async function Catalogo({ parametros }: { parametros: ParametrosInicio }) {
 
   return (
     <div className="flex flex-col gap-6">
+      <GuiaDePantalla clave="inicio" pasos={PASOS_INICIO} />
       <FilaFiltros parametros={parametros} categorias={listaCategorias} lugares={lugares} />
 
       {!resultado.ok ? (
@@ -61,7 +64,13 @@ async function Catalogo({ parametros }: { parametros: ParametrosInicio }) {
       ) : eventos.length === 0 ? (
         <EstadoVacio
           icono={<CalendarX2 />}
-          titulo={todos.length === 0 ? "Aún no hay eventos publicados en esta zona" : "Ningún evento coincide con los filtros"}
+          titulo={
+            todos.length === 0
+              ? "Aún no hay eventos publicados"
+              : parametros.zona
+                ? `No hay eventos publicados en ${parametros.zona}`
+                : "Ningún evento coincide con los filtros"
+          }
           descripcion={
             tieneUbicacion(parametros)
               ? "Prueba a quitar «Cerca de mí» o explora los eventos de Orizaba."
@@ -82,7 +91,7 @@ async function Catalogo({ parametros }: { parametros: ParametrosInicio }) {
           <ul className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {eventos.map((evento, indice) => (
               <Revelar as="li" key={evento.id} orden={indice % 6} className="flex">
-                <div className="flex w-full">
+                <div className="flex w-full" data-guia={indice === 0 ? "inicio_evento" : undefined}>
                   <TarjetaEvento evento={evento} prioridad={indice < 3} />
                 </div>
               </Revelar>
