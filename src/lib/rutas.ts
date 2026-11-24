@@ -1,6 +1,7 @@
 /** Rutas de la web (equivalente de `Rutas` en MainActivity.kt). */
 export const RUTAS = Object.freeze({
   inicio: "/",
+  notificaciones: "/notificaciones",
   login: "/login",
   loginPersonal: "/login?acceso=personal",
   registro: "/registro",

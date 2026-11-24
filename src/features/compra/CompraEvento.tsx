@@ -14,6 +14,8 @@ import { Dialogo } from "@/components/ui/Dialogo";
 import { Aviso, FilaDato } from "@/components/ui/Superficies";
 import { BarraCompra } from "@/components/compra/BarraCompra";
 import { SelectorCantidad } from "@/components/compra/SelectorCantidad";
+import { GuiaDePantalla } from "@/features/guias/GuiaDePantalla";
+import { pasosDetalle } from "@/features/guias/pasos";
 import { crearOrden } from "./api";
 import { cupoDisponible, estadoDelDetalle, nuevaClaveIdempotencia, tiposElegibles, type EstadoDetalle } from "./reglas";
 
@@ -91,7 +93,7 @@ export function CompraEvento({ evento, conSesion, yaTieneBoleto }: Props) {
       ) : null}
 
       {evento.esDePago && tipos.length > 0 && !bloqueo ? (
-        <section aria-labelledby="titulo-tipos" className="flex flex-col gap-3">
+        <section aria-labelledby="titulo-tipos" data-guia="detalle_tipos" className="flex flex-col gap-3">
           <h2 id="titulo-tipos" className="text-xl font-semibold text-tinta">
             Elige tu boleto
           </h2>
@@ -107,7 +109,7 @@ export function CompraEvento({ evento, conSesion, yaTieneBoleto }: Props) {
       ) : null}
 
       {evento.esDePago && !bloqueo ? (
-        <section aria-labelledby="titulo-cantidad" className="rounded-tarjeta bg-superficie p-5">
+        <section aria-labelledby="titulo-cantidad" data-guia="detalle_cantidad" className="rounded-tarjeta bg-superficie p-5">
           <div className="flex items-center justify-between gap-4">
             <div>
               <h2 id="titulo-cantidad" className="text-xl font-semibold text-tinta">
@@ -138,7 +140,13 @@ export function CompraEvento({ evento, conSesion, yaTieneBoleto }: Props) {
 
       {error ? <Aviso tono="error">{error}</Aviso> : null}
 
+      <GuiaDePantalla
+        clave="detalle_evento"
+        activa={conSesion && !bloqueo && maximo > 0}
+        pasos={pasosDetalle(evento, evento.esDePago && tipos.length > 0 && !bloqueo)}
+      />
       <BarraCompra
+        guia="detalle_accion"
         resumen={
           bloqueo ? (
             bloqueo.resumen
