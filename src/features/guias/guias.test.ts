@@ -59,6 +59,16 @@ describe("geometría de la guía", () => {
     expect(posicionTarjeta(abajo, pantalla, tarjeta, 84, 24).y).toBe(760 - 84 - 120);
   });
 
+  it("respeta la barra de botones y acorta la separación antes de pisarla", () => {
+    const reserva = { arriba: 0, abajo: 68 };
+    const chips = { left: 0, top: 245, width: 390, height: 64 };
+    const alta = { width: 342, height: 204 };
+    // Con 84 px quedaría en 597 px (pisa la barra en 664 − 24 − 68 = 572): baja a 42 px y cabe
+    expect(posicionTarjeta(chips, { width: 390, height: 664 }, alta, 84, 24, reserva).y).toBe(309 + 42);
+    // Sin foco, se centra en la zona libre entre el margen y la barra
+    expect(posicionTarjeta(null, { width: 390, height: 664 }, tarjeta, 84, 24, { arriba: 68, abajo: 0 }).y).toBe(92 + (548 - 120) / 2);
+  });
+
   it("la flecha llega al borde superior del foco cuando este queda debajo del texto", () => {
     const texto = { left: 24, top: 232, width: 257, height: 120 };
     const foco = { left: 20, top: 500, width: 200, height: 48 };

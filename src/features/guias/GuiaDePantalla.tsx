@@ -34,6 +34,8 @@ const GROSOR_FLECHA = 5;
 const PUNTA_FLECHA = 22;
 const ANCHO_MAXIMO_TEXTO = 448;
 const PROPORCION_MAXIMA_FOCO = 0.45;
+/** Alto de la barra de botones (py-3 + h-11); el texto nunca se coloca debajo de ella. */
+const ALTO_BARRA = 68;
 const ATRIBUTO_ACTIVA = "data-guia-activa";
 
 interface Props {
@@ -136,13 +138,16 @@ function Superposicion({ pasos, onTerminar }: { pasos: PasoGuia[]; onTerminar: (
   }, [indice]);
 
   const recorte = foco ? inflar(foco, MARGEN_FOCO) : null;
+  // La barra de botones va abajo, salvo que el foco esté ahí (barra de navegación): entonces arriba
+  const barraArriba = recorte !== null && abajo(recorte) > pantalla.height * 0.8;
+  const reserva = barraArriba ? { arriba: ALTO_BARRA, abajo: 0 } : { arriba: 0, abajo: ALTO_BARRA };
 
   // Coloca el texto y traza la flecha sin pasar por el estado (medidas del propio texto).
   useLayoutEffect(() => {
     const texto = textoRef.current;
     if (!texto) return;
     const tamano = { width: texto.offsetWidth, height: texto.offsetHeight };
-    const base = posicionTarjeta(recorte, pantalla, tamano, SEPARACION_TEXTO, MARGEN_PANTALLA);
+    const base = posicionTarjeta(recorte, pantalla, tamano, SEPARACION_TEXTO, MARGEN_PANTALLA, reserva);
     // Sin foco el texto va centrado; con foco, alineado al margen izquierdo como en un apunte a mano
     const posicion = recorte ? { x: MARGEN_PANTALLA, y: base.y } : base;
     texto.style.transform = `translate(${posicion.x}px, ${posicion.y}px)`;
@@ -157,9 +162,9 @@ function Superposicion({ pasos, onTerminar }: { pasos: PasoGuia[]; onTerminar: (
     }
   });
 
-  const anchoTexto = Math.min(pantalla.width * (recorte ? 0.66 : 0.8), ANCHO_MAXIMO_TEXTO);
-  // La barra de botones va abajo, salvo que el foco esté ahí (barra de navegación): entonces arriba
-  const barraArriba = recorte !== null && abajo(recorte) > pantalla.height * 0.8;
+  // Con un foco angosto el texto deja sitio a la derecha para la flecha; con uno ancho (fila de chips) usa casi todo el ancho
+  const focoAngosto = recorte !== null && recorte.width < pantalla.width * 0.6;
+  const anchoTexto = Math.min(focoAngosto ? pantalla.width * 0.66 : pantalla.width - MARGEN_PANTALLA * 2, ANCHO_MAXIMO_TEXTO);
 
   const teclado = (evento: KeyboardEvent<HTMLDivElement>) => {
     if (evento.key === "Escape") {
@@ -199,8 +204,8 @@ function Superposicion({ pasos, onTerminar }: { pasos: PasoGuia[]; onTerminar: (
       </svg>
 
       <div ref={textoRef} className="pointer-events-none absolute top-0 left-0 flex flex-col gap-2 text-blanco" style={{ width: anchoTexto }}>
-        <h2 className="text-2xl leading-tight font-bold">{paso.titulo}</h2>
-        <p className="text-[17px] leading-relaxed text-blanco/85">{paso.texto}</p>
+        <h2 className="text-xl leading-tight font-bold sm:text-2xl">{paso.titulo}</h2>
+        <p className="text-[15px] leading-relaxed text-blanco/85 sm:text-[17px]">{paso.texto}</p>
       </div>
 
       <div

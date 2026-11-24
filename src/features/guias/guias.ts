@@ -124,20 +124,39 @@ function acotar(valor: number, minimo: number, maximo: number): number {
  * Dónde va el texto: debajo del foco si cabe, si no encima; sin foco, al
  * centro. Siempre dentro de la pantalla con el margen dado.
  */
-export function posicionTarjeta(foco: Caja | null, pantalla: Tamano, tarjeta: Tamano, separacion: number, margen: number): Punto {
+export interface Reserva {
+  /** Alto ocupado por la barra de botones arriba y abajo: el texto nunca la pisa. */
+  arriba: number;
+  abajo: number;
+}
+
+const SIN_RESERVA: Reserva = { arriba: 0, abajo: 0 };
+
+export function posicionTarjeta(
+  foco: Caja | null,
+  pantalla: Tamano,
+  tarjeta: Tamano,
+  separacion: number,
+  margen: number,
+  reserva: Reserva = SIN_RESERVA,
+): Punto {
   const x = Math.max((pantalla.width - tarjeta.width) / 2, margen);
+  const limiteSuperior = margen + reserva.arriba;
+  const limiteInferior = pantalla.height - margen - reserva.abajo;
   if (!foco) {
-    return { x: Math.round(x), y: Math.round(Math.max((pantalla.height - tarjeta.height) / 2, margen)) };
+    const libre = limiteInferior - limiteSuperior;
+    return { x: Math.round(x), y: Math.round(limiteSuperior + Math.max((libre - tarjeta.height) / 2, 0)) };
   }
-  const debajo = abajo(foco) + separacion;
-  const encima = foco.top - separacion - tarjeta.height;
-  let y: number;
-  if (debajo + tarjeta.height + margen <= pantalla.height) y = debajo;
-  else if (encima >= margen) y = encima;
+  // Primero con la separación normal; si no cabe, con la mitad (la flecha queda más corta)
+  for (const distancia of [separacion, separacion / 2]) {
+    const debajo = abajo(foco) + distancia;
+    if (debajo + tarjeta.height <= limiteInferior) return { x: Math.round(x), y: Math.round(debajo) };
+    const encima = foco.top - distancia - tarjeta.height;
+    if (encima >= limiteSuperior) return { x: Math.round(x), y: Math.round(encima) };
+  }
   // No cabe ni arriba ni abajo (objetivo muy alto): se pega al borde que deje más foco visible
-  else if (centro(foco).y > pantalla.height / 2) y = margen;
-  else y = pantalla.height - margen - tarjeta.height;
-  return { x: Math.round(x), y: Math.round(Math.max(y, margen)) };
+  const y = centro(foco).y > pantalla.height / 2 ? limiteSuperior : limiteInferior - tarjeta.height;
+  return { x: Math.round(x), y: Math.round(Math.max(y, limiteSuperior)) };
 }
 
 /**

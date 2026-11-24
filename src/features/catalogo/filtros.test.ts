@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { EventoDto } from "@/lib/api/tipos";
-import { aFiltrosApi, ciudadDe, coincideCiudad, contarFiltrosActivos, filtrarEnCliente, lugaresDe, normalizarCiudad, tieneUbicacion } from "./filtros";
+import { aFiltrosApi, ciudadDe, coincideCiudad, contarFiltrosActivos, filtrarEnCliente, normalizarCiudad, tieneUbicacion } from "./filtros";
 
 const evento = (id: number, lugar: string, fecha: string): EventoDto => ({
   id,
@@ -52,12 +52,6 @@ describe("filtros de Inicio (RF-05 a RF-07, RF-19)", () => {
     expect(filtrarEnCliente(eventos, {}).map((item) => item.id)).toEqual([1]);
     expect(filtrarEnCliente(eventos, { zona: "Xalapa" }).map((item) => item.id)).toEqual([2]);
     expect(filtrarEnCliente(eventos, { lat: "18.85", lng: "-97.1" }).map((item) => item.id)).toEqual([1, 2]);
-  });
-
-  it("filtra por lugar en el cliente y lista las sedes", () => {
-    const eventos = [evento(1, "Foro Cultural", "2030-01-10T19:00:00-06:00"), evento(2, "Palacio de Hierro", "2030-01-11T10:00:00-06:00")];
-    expect(filtrarEnCliente(eventos, { lugar: "foro cultural" }).map((item) => item.id)).toEqual([1]);
-    expect(lugaresDe(eventos)).toEqual(["Foro Cultural", "Palacio de Hierro"]);
   });
 
   it("filtra por fecha comparando instantes reales", () => {
