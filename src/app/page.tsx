@@ -12,7 +12,7 @@ import { categorias, eventosPublicados } from "@/features/eventos/api";
 import { FilaFiltros } from "@/features/catalogo/FilaFiltros";
 import { GuiaDePantalla } from "@/features/guias/GuiaDePantalla";
 import { PASOS_INICIO } from "@/features/guias/pasos";
-import { aFiltrosApi, filtrarEnCliente, lugaresDe, tieneUbicacion, type ParametrosInicio } from "@/features/catalogo/filtros";
+import { aFiltrosApi, filtrarEnCliente, tieneUbicacion, type ParametrosInicio } from "@/features/catalogo/filtros";
 
 /*
  * Inicio (RF-05 a RF-07, RF-19): catálogo de eventos publicados con zona,
@@ -42,12 +42,11 @@ async function Catalogo({ parametros }: { parametros: ParametrosInicio }) {
 
   const todos = resultado.ok ? resultado.eventos : [];
   const eventos = filtrarEnCliente(todos, parametros);
-  const lugares = lugaresDe(todos);
 
   return (
     <div className="flex flex-col gap-6">
       <GuiaDePantalla clave="inicio" pasos={PASOS_INICIO} />
-      <FilaFiltros parametros={parametros} categorias={listaCategorias} lugares={lugares} />
+      <FilaFiltros parametros={parametros} categorias={listaCategorias} />
 
       {!resultado.ok ? (
         <Aviso

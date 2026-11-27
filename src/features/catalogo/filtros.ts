@@ -14,7 +14,6 @@ export type ParametrosInicio = {
   zona?: string;
   pago?: "gratis" | "de-pago";
   fecha?: FiltroFecha;
-  lugar?: string;
   tipo?: string;
   lat?: string;
   lng?: string;
@@ -88,34 +87,24 @@ export function aFiltrosApi(parametros: ParametrosInicio, ahora: Date = new Date
 }
 
 /**
- * Filtros que la API no aplica (lugar, zona tolerante) o que conviene reafirmar
- * en el cliente (fecha). Con ubicación activa la zona no se aplica: la API ya
- * ordenó por cercanía dentro del radio.
+ * Filtros que la API no aplica (zona tolerante) o que conviene reafirmar en el
+ * cliente (fecha). Con ubicación activa la zona no se aplica: la API ya ordenó
+ * por cercanía dentro del radio.
  */
 export function filtrarEnCliente(eventos: EventoDto[], parametros: ParametrosInicio, ahora: Date = new Date()): EventoDto[] {
-  const lugar = parametros.lugar?.trim().toLowerCase();
   const rango = parametros.fecha ? rangoDeFiltro(parametros.fecha, ahora) : null;
   const zona = tieneUbicacion(parametros) ? null : ciudadDe(parametros);
   return eventos.filter((evento) => {
     if (zona && !coincideCiudad(evento.ciudad, zona)) return false;
-    if (lugar && evento.lugar.trim().toLowerCase() !== lugar) return false;
     if (rango && !enRango(evento.fechaHoraInicio, rango)) return false;
     return true;
   });
-}
-
-/** Sedes distintas de la lista, para el menú «Lugar». */
-export function lugaresDe(eventos: EventoDto[]): string[] {
-  return [...new Set(eventos.map((evento) => evento.lugar.trim()).filter(Boolean))].sort((a, b) =>
-    a.localeCompare(b, "es"),
-  );
 }
 
 export function contarFiltrosActivos(parametros: ParametrosInicio): number {
   let total = 0;
   if (parametros.pago) total += 1;
   if (parametros.fecha) total += 1;
-  if (parametros.lugar) total += 1;
   if (parametros.tipo) total += 1;
   if (tieneUbicacion(parametros)) total += 1;
   return total;

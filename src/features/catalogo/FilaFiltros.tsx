@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, useTransition, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { Check, ChevronDown, LocateFixed, MapPin, Search, X } from "lucide-react";
 import type { CategoriaDto } from "@/lib/api/tipos";
 import { cn } from "@/lib/cn";
@@ -17,7 +18,7 @@ import { FILTROS_FECHA, ZONAS_DE_MUESTRA, contarFiltrosActivos, type ParametrosI
 
 /*
  * Cabecera de Inicio: zona (ciudad a mano, RNF-11), búsqueda por texto y los
- * chips Cerca de mí · Gratis · De pago · Fecha · Lugar · Tipo, con contador y
+ * chips Cerca de mí · Gratis · De pago · Fecha · Tipo, con contador y
  * «Limpiar filtros». «Cerca de mí» pide el permiso de ubicación solo al tocarlo
  * (RF-19); si se niega, se sigue filtrando por ciudad (CP-18).
  */
@@ -25,10 +26,9 @@ import { FILTROS_FECHA, ZONAS_DE_MUESTRA, contarFiltrosActivos, type ParametrosI
 interface Props {
   parametros: ParametrosInicio;
   categorias: CategoriaDto[];
-  lugares: string[];
 }
 
-export function FilaFiltros({ parametros, categorias, lugares }: Props) {
+export function FilaFiltros({ parametros, categorias }: Props) {
   const router = useRouter();
   const ruta = usePathname();
   const actuales = useSearchParams();
@@ -168,12 +168,6 @@ export function FilaFiltros({ parametros, categorias, lugares }: Props) {
           onElegir={(valor) => actualizar({ fecha: valor })}
         />
         <ChipMenu
-          etiqueta="Lugar"
-          valor={parametros.lugar}
-          opciones={lugares.map((lugar) => ({ valor: lugar, texto: lugar }))}
-          onElegir={(valor) => actualizar({ lugar: valor })}
-        />
-        <ChipMenu
           etiqueta="Tipo"
           valor={parametros.tipo}
           opciones={categorias.map((categoria) => ({ valor: String(categoria.id), texto: categoria.nombre }))}
@@ -188,7 +182,7 @@ export function FilaFiltros({ parametros, categorias, lugares }: Props) {
           </span>
           <button
             type="button"
-            onClick={() => actualizar({ pago: null, fecha: null, lugar: null, tipo: null, lat: null, lng: null })}
+            onClick={() => actualizar({ pago: null, fecha: null, tipo: null, lat: null, lng: null })}
             className="cursor-pointer font-medium text-profundo hover:underline"
           >
             Limpiar filtros
@@ -253,35 +247,58 @@ interface PropsChipMenu {
   onElegir: (valor: string | null) => void;
 }
 
+const ANCHO_MENU = 224;
+const ALTO_MAXIMO_MENU = 288;
+const SEPARACION_MENU = 8;
+
+/**
+ * Chip con menú desplegable (ChipDesplegable de la app). El menú se pinta en
+ * `document.body` con posición fija: la fila de chips se desplaza en horizontal
+ * y recortaría cualquier cosa que colgara de ella.
+ */
 function ChipMenu({ etiqueta, valor, opciones, onElegir }: PropsChipMenu) {
-  const [abierto, setAbierto] = useState(false);
-  const contenedor = useRef<HTMLDivElement>(null);
+  const [posicion, setPosicion] = useState<{ left: number; top?: number; bottom?: number } | null>(null);
+  const chipRef = useRef<HTMLDivElement>(null);
+  const listaRef = useRef<HTMLUListElement>(null);
+  const abierto = posicion !== null;
   const textoActual = opciones.find((opcion) => opcion.valor === valor)?.texto;
+
+  // Debajo del chip, alineado a su izquierda y dentro de la pantalla; encima si abajo no cabe
+  const colocar = () => {
+    const caja = chipRef.current?.getBoundingClientRect();
+    if (!caja) return;
+    const left = Math.max(16, Math.min(caja.left, window.innerWidth - ANCHO_MENU - 16));
+    const cabeDebajo = caja.bottom + SEPARACION_MENU + ALTO_MAXIMO_MENU <= window.innerHeight;
+    setPosicion(cabeDebajo ? { left, top: caja.bottom + SEPARACION_MENU } : { left, bottom: window.innerHeight - caja.top + SEPARACION_MENU });
+  };
+  const cerrar = () => setPosicion(null);
 
   useEffect(() => {
     if (!abierto) return;
-    const cerrar = (evento: MouseEvent | KeyboardEvent) => {
-      if (evento instanceof KeyboardEvent && evento.key !== "Escape") return;
-      if (evento instanceof MouseEvent && contenedor.current?.contains(evento.target as Node)) return;
-      setAbierto(false);
+    const fuera = (evento: PointerEvent) => {
+      const objetivo = evento.target as Node;
+      if (chipRef.current?.contains(objetivo) || listaRef.current?.contains(objetivo)) return;
+      cerrar();
     };
-    document.addEventListener("mousedown", cerrar);
-    document.addEventListener("keydown", cerrar);
+    const tecla = (evento: KeyboardEvent) => {
+      if (evento.key === "Escape") cerrar();
+    };
+    // Al desplazar la página o la fila de chips (al enfocar el chip el navegador la mueve), el menú sigue al chip
+    document.addEventListener("pointerdown", fuera);
+    document.addEventListener("keydown", tecla);
+    window.addEventListener("scroll", colocar, { capture: true, passive: true });
+    window.addEventListener("resize", colocar);
     return () => {
-      document.removeEventListener("mousedown", cerrar);
-      document.removeEventListener("keydown", cerrar);
+      document.removeEventListener("pointerdown", fuera);
+      document.removeEventListener("keydown", tecla);
+      window.removeEventListener("scroll", colocar, true);
+      window.removeEventListener("resize", colocar);
     };
   }, [abierto]);
 
   return (
-    <div ref={contenedor} className="relative shrink-0">
-      <Chip
-        activo={Boolean(valor)}
-        onClick={() => setAbierto((estado) => !estado)}
-        aria-expanded={abierto}
-        aria-haspopup="listbox"
-        icono={valor ? undefined : undefined}
-      >
+    <div ref={chipRef} className="shrink-0">
+      <Chip activo={Boolean(valor)} onClick={abierto ? cerrar : colocar} aria-expanded={abierto} aria-haspopup="listbox">
         {textoActual ?? etiqueta}
         {valor ? (
           <X
@@ -296,39 +313,44 @@ function ChipMenu({ etiqueta, valor, opciones, onElegir }: PropsChipMenu) {
           <ChevronDown className="size-4" aria-hidden="true" />
         )}
       </Chip>
-      {abierto ? (
-        <ul
-          role="listbox"
-          aria-label={etiqueta}
-          className="absolute top-full left-0 z-20 mt-2 max-h-72 min-w-56 overflow-y-auto rounded-tarjeta bg-superficie p-2 shadow-flotante"
-        >
-          {opciones.length === 0 ? (
-            <li className="px-3 py-2 text-[15px] text-gris-texto">Sin opciones</li>
-          ) : (
-            opciones.map((opcion) => {
-              const elegido = opcion.valor === valor;
-              return (
-                <li key={opcion.valor} role="option" aria-selected={elegido}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onElegir(elegido ? null : opcion.valor);
-                      setAbierto(false);
-                    }}
-                    className={cn(
-                      "flex w-full cursor-pointer items-center justify-between gap-3 rounded-campo px-3 py-2.5 text-left text-[15px] hover:bg-tinte-50",
-                      elegido ? "font-medium text-marino" : "text-tinta",
-                    )}
-                  >
-                    <span>{opcion.texto}</span>
-                    {elegido ? <Check className="size-4" aria-hidden="true" /> : null}
-                  </button>
-                </li>
-              );
-            })
-          )}
-        </ul>
-      ) : null}
+      {abierto
+        ? createPortal(
+            <ul
+              ref={listaRef}
+              role="listbox"
+              aria-label={etiqueta}
+              style={posicion}
+              className="fixed z-40 max-h-72 w-56 max-w-[calc(100vw-2rem)] overflow-y-auto rounded-tarjeta bg-superficie p-2 shadow-flotante animate-[aparecer_150ms_ease-out]"
+            >
+              {opciones.length === 0 ? (
+                <li className="px-3 py-2 text-[15px] text-gris-texto">Sin opciones</li>
+              ) : (
+                opciones.map((opcion) => {
+                  const elegido = opcion.valor === valor;
+                  return (
+                    <li key={opcion.valor} role="option" aria-selected={elegido}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onElegir(elegido ? null : opcion.valor);
+                          cerrar();
+                        }}
+                        className={cn(
+                          "flex w-full cursor-pointer items-center justify-between gap-3 rounded-campo px-3 py-2.5 text-left text-[15px] hover:bg-tinte-50",
+                          elegido ? "font-medium text-marino" : "text-tinta",
+                        )}
+                      >
+                        <span>{opcion.texto}</span>
+                        {elegido ? <Check className="size-4" aria-hidden="true" /> : null}
+                      </button>
+                    </li>
+                  );
+                })
+              )}
+            </ul>,
+            document.body,
+          )
+        : null}
     </div>
   );
 }
